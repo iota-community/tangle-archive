@@ -1,0 +1,10 @@
+version: '2'
+services:
+    web:
+      restart: always
+      build: .
+      entrypoint: /permanode/scripts/permanode_web.sh
+      ports:
+        - "9080:9080"
+      volumes:
+        - .:/permanode

@@ -1,0 +1,6 @@
+eventlet==0.20
+flask==0.11.1
+flask_script
+flake8
+gunicorn
+jsonschema==2.5.1
