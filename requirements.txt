@@ -4,3 +4,4 @@ flask_script
 flake8
 gunicorn
 jsonschema==2.5.1
+flask-cqlalchemy
