@@ -35,7 +35,7 @@ class HttpRequest:
 
     def make_request(self, method):
         try:
-            res = requests.request(
+            res = self._requests_retry_session().request(
                 method,
                 self.url,
                 data=self.data,

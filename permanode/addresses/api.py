@@ -2,23 +2,12 @@ from flask import jsonify, abort
 from cassandra.cqlengine.query import DoesNotExist, BatchQuery
 from cassandra.cqlengine.query import MultipleObjectsReturned
 from permanode.addresses import addresses
-from permanode.shared.payload_validator import validate_payload
-from permanode.addresses.schema import address_validation_schema
 from permanode.models import AddressModel
-from permanode.shared.iota_api import IotaApi
 
 
 @addresses.route('/addresses/<address>', methods=['GET'])
 def validate_address_usage(address):
-    api = IotaApi()
-    transactions, status_code = api.find_transactions(bundles=[
-        'MDIQATJJEX9SUANUWVERJFGAFWPSQAQRRZKKYKFYKGCBEA9FH9EETUEZOPYTVK9IVCHLJXJYQXAFGRCH9'
-    ])
-
-    if not transactions:
-        abort(404)
-
-    return jsonify(transactions)
+    return jsonify({ 'is_spent': True, 'address': address })
 
 
 @addresses.route('/addresses/spent/<address>') # TODO: Sort out route names

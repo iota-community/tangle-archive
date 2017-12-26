@@ -1,5 +1,3 @@
-from __future__ import print_function # In python 2.7
-import sys
 from http_request import HttpRequest
 import json
 
@@ -15,7 +13,7 @@ class IotaApi:
         self.url = 'https://iri2-api.iota.fm:443'
         self.command = None
 
-    def _make_fullnode_request(self):
+    def _make_request(self):
         res = HttpRequest(
                 self.method,
                 self.url,
@@ -41,7 +39,7 @@ class IotaApi:
         if tags:
             self.command['tags'] = tags
 
-        return self._make_fullnode_request()
+        return self._make_request()
 
     def get_node_info(self):
         self.command = {
@@ -50,4 +48,4 @@ class IotaApi:
 
         self.method = 'GET'
 
-        return self._make_fullnode_request()
+        return self._make_request()
