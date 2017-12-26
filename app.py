@@ -1,9 +1,11 @@
 import os
+from iota.json import JsonEncoder
 from flask_script import Manager, Server
 from permanode import init
 from permanode.models import db
 
 app = init('development')
+app.json_encoder = JsonEncoder
 flask_server = Manager(app)
 
 port = os.getenv('PORT', '9080')
