@@ -5,12 +5,20 @@ from permanode.addresses import addresses
 from permanode.shared.payload_validator import validate_payload
 from permanode.addresses.schema import address_validation_schema
 from permanode.models import AddressModel
+from permanode.shared.iota_api import IotaApi
 
 
 @addresses.route('/addresses/<address>', methods=['GET'])
-@validate_payload(address_validation_schema)
 def validate_address_usage(address):
-    return jsonify({'is_used': True})
+    api = IotaApi()
+    transactions, status_code = api.find_transactions(bundles=[
+        'MDIQATJJEX9SUANUWVERJFGAFWPSQAQRRZKKYKFYKGCBEA9FH9EETUEZOPYTVK9IVCHLJXJYQXAFGRCH9'
+    ])
+
+    if not transactions:
+        abort(404)
+
+    return jsonify(transactions)
 
 
 @addresses.route('/addresses/spent/<address>') # TODO: Sort out route names

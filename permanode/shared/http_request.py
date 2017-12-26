@@ -11,6 +11,9 @@ class HttpRequest:
         self.timeout = timeout
         self.url = url
 
+        self.response = None
+        self.status_code = None
+
         self.make_request(method)
 
     def _requests_retry_session(self, retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None):
@@ -31,13 +34,20 @@ class HttpRequest:
         return session
 
     def make_request(self, method):
-        return self._requests_retry_session().request(
-            method,
-            self.url,
-            data=self.data,
-            headers=self.headers,
-            auth=self.auth,
-            timeout=self.timeout,
-            verify=False
-        )
+        try:
+            res = requests.request(
+                method,
+                self.url,
+                data=self.data,
+                headers=self.headers,
+                auth=self.auth,
+                timeout=self.timeout,
+                verify=False
+            )
 
+            self.response = res.json()
+            self.status_code = res.status_code
+
+            return res
+        except requests.exceptions.RequestException as e:
+            return None
