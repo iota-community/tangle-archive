@@ -21,6 +21,9 @@ class IotaApi:
                 data=json.dumps(self.command),
             )
 
+        if res is None:
+            return None, 503
+
         return res.response, res.status_code
 
     def find_transactions(self, addresses=None, bundles=None, tags=None):
@@ -38,6 +41,16 @@ class IotaApi:
 
         if tags:
             self.command['tags'] = tags
+
+        return self._make_request()
+
+    def get_trytes(self, hashes):
+        self.command = {
+            'command': 'getTrytes',
+            'hashes': hashes
+        }
+
+        self.method = 'GET'
 
         return self._make_request()
 
