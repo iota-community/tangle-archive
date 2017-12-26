@@ -1,5 +1,3 @@
-from __future__ import print_function
-import sys
 from flask import jsonify, abort
 from iota import Address, Bundle, Transaction, TryteString, Tag
 from permanode.search import search
@@ -16,60 +14,114 @@ def fetch_associated_info(search_string):
     if len(search_string) <= 27:
         tags, tags_status_code = api.find_transactions(tags=[search_string])
 
-        if tags_status_code is 503:
-            abort(503)
-        else:
+        if tags_status_code == 503 or tags_status_code == 400:
+            abort(tags_status_code)
+        elif tags_status_code == 200:
+            if not tags['hashes']:
+                return jsonify({
+                    'type': 'tag',
+                    'payload': []
+                })
+
+            transaction_trytes, transaction_trytes_status_code = api.get_trytes(tags['hashes'])
+            all_transaction_objects = []
+
+            for tryte in transaction_trytes['trytes']:
+                transaction_inst = Transaction.from_tryte_string(tryte)
+
+                all_transaction_objects.append(transaction_inst.as_json_compatible())
+
             return jsonify({
                 'type': 'tag',
-                'payload': tags
+                'payload': all_transaction_objects
             })
 
-    if len(search_string) is 90:
+        return jsonify({
+            'type': 'tag',
+            'payload': []
+        })
+
+    if len(search_string) == 90:
         addresses, addresses_status_code = api.find_transactions(addresses=[search_string[:-9]])
 
-        if addresses_status_code is 503:
-            abort(503)
+        if addresses_status_code == 503 or addresses_status_code == 400:
+            abort(addresses_status_code)
+        elif addresses_status_code == 200:
+            if not addresses['hashes']:
+                return jsonify({
+                    'type': 'address',
+                    'payload': []
+                })
 
-        transaction_trytes, transaction_trytes_status_code = api.get_trytes(addresses['hashes'])
-        all_transaction_objects = []
+            transaction_trytes, transaction_trytes_status_code = api.get_trytes(addresses['hashes'])
+            all_transaction_objects = []
 
-        for tryte in transaction_trytes['trytes']:
-            transaction_inst = Transaction.from_tryte_string(tryte)
+            for tryte in transaction_trytes['trytes']:
+                transaction_inst = Transaction.from_tryte_string(tryte)
 
-            all_transaction_objects.append(transaction_inst.as_json_compatible())
+                all_transaction_objects.append(transaction_inst.as_json_compatible())
+
+            return jsonify({
+                'type': 'address',
+                'payload': all_transaction_objects
+            })
 
         return jsonify({
             'type': 'address',
-            'payload': all_transaction_objects
+            'payload': []
         })
 
-    if len(search_string) is 81 and search_string.endswith('999'):
+    if len(search_string) == 81 and search_string.endswith('999'):
         transaction_trytes, transaction_trytes_status_code = api.get_trytes([search_string])
 
-        if transaction_trytes_status_code is 503:
-            abort(503)
+        if transaction_trytes_status_code == 503 or transaction_trytes_status_code == 400:
+            abort(transaction_trytes_status_code)
+        elif transaction_trytes_status_code == 200:
+            if not transaction_trytes['trytes']:
+                return jsonify({
+                    'type': 'transaction',
+                    'payload': []
+                })
 
-        transaction_inst = Transaction.from_tryte_string(transaction_trytes['trytes'][0])
+            all_transaction_objects = []
+            for tryte in transaction_trytes['trytes']:
+                transaction_inst = Transaction.from_tryte_string(tryte)
+                all_transaction_objects.append(transaction_inst.as_json_compatible())
+
+            return jsonify({
+                'type': 'transaction',
+                'payload': all_transaction_objects
+            })
 
         return jsonify({
             'type': 'transaction',
-            'payload': transaction_inst.as_json_compatible()
+            'payload': []
         })
 
-    if len(search_string) is 81 and not search_string.endswith('999'):
+    if len(search_string) == 81 and not search_string.endswith('999'):
         bundles, bundles_status_code = api.find_transactions(bundles=[search_string])
 
-        if bundles_status_code is 503:
-            abort(503)
+        if bundles_status_code == 503 or bundles_status_code == 400:
+            abort(bundles_status_code)
+        elif bundles_status_code == 200:
+            if not bundles['hashes']:
+                return jsonify({
+                    'type': 'bundle',
+                    'payload': []
+                })
 
-        transaction_trytes, transaction_trytes_status_code = api.get_trytes(bundles['hashes'])
-        print('Got trytes', file=sys.stderr)
+            transaction_trytes, transaction_trytes_status_code = api.get_trytes(bundles['hashes'])
 
-        bundle_inst = Bundle.from_tryte_strings(transaction_trytes['trytes'])
+            bundle_inst = Bundle.from_tryte_strings(transaction_trytes['trytes'])
+
+            return jsonify({
+                'type': 'bundle',
+                'payload': bundle_inst.as_json_compatible()
+            })
 
         return jsonify({
             'type': 'bundle',
-            'payload': bundle_inst.as_json_compatible()
+            'payload': []
         })
 
     abort(404)
