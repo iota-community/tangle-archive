@@ -1,6 +1,7 @@
-from flask import jsonify
+from flask import jsonify, abort
 from permanode.transactions import transactions
 from permanode.models import AddressModel, TransactionModel
+from permanode.shared.iota_api import IotaApi
 
 
 @transactions.route('/transactions/<address>', methods=['GET'])
@@ -18,3 +19,14 @@ def verify_transaction_existence(transaction_hash):
         return jsonify({'exists': True})
 
     return jsonify({'exists': False})
+
+
+@transactions.route('/transactions/<bundle>', methods=['GET'])
+def find_transactions(bundle):
+    api = IotaApi()
+    response, status_code = api.find_transactions(bundles=[bundle])
+
+    if not transactions:
+        abort(404)
+
+    return jsonify(response)

@@ -2,15 +2,12 @@ from flask import jsonify, abort
 from cassandra.cqlengine.query import DoesNotExist, BatchQuery
 from cassandra.cqlengine.query import MultipleObjectsReturned
 from permanode.addresses import addresses
-from permanode.shared.payload_validator import validate_payload
-from permanode.addresses.schema import address_validation_schema
 from permanode.models import AddressModel
 
 
 @addresses.route('/addresses/<address>', methods=['GET'])
-@validate_payload(address_validation_schema)
 def validate_address_usage(address):
-    return jsonify({'is_used': True})
+    return jsonify({ 'is_spent': True, 'address': address })
 
 
 @addresses.route('/addresses/spent/<address>') # TODO: Sort out route names

@@ -4,7 +4,7 @@ from permanode import db
 
 class Base(db.Model):
     __abstract__ = True
-    __keyspace__ = "snapshots"
+    __keyspace__ = "snapshotsdb"
 
 
 class AddressModel(Base):
