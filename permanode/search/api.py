@@ -1,5 +1,6 @@
 from flask import jsonify, abort
 from iota import Address, Bundle, Transaction, TryteString, Tag
+from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
 from permanode.search import search
 from permanode.shared.iota_api import IotaApi
 
@@ -18,9 +19,20 @@ def fetch_associated_info(search_string):
             abort(tags_status_code)
         elif tags_status_code == 200:
             if not tags['hashes']:
+                tag_ref = TagModel.objects.filter(tag=search_string)
+                tag_obj = [res.as_json() for res in tag_ref]
+
+                if not tag_obj:
+                    return jsonify({
+                        'type': 'tag',
+                        'payload': []
+                    })
+
+                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+
                 return jsonify({
                     'type': 'tag',
-                    'payload': []
+                    'payload': [res.as_json() for res in txs]
                 })
 
             transaction_trytes, transaction_trytes_status_code = api.get_trytes(tags['hashes'])
@@ -48,9 +60,20 @@ def fetch_associated_info(search_string):
             abort(addresses_status_code)
         elif addresses_status_code == 200:
             if not addresses['hashes']:
+                addresses_ref = AddressModel.objects.filter(address=search_string)
+                addresses_obj = [res.as_json() for res in addresses_ref]
+
+                if not addresses_obj:
+                    return jsonify({
+                        'type': 'address',
+                        'payload': []
+                    })
+
+                txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+
                 return jsonify({
                     'type': 'address',
-                    'payload': []
+                    'payload': [res.get_transaction() for res in txs]
                 })
 
             transaction_trytes, transaction_trytes_status_code = api.get_trytes(addresses['hashes'])
@@ -78,9 +101,20 @@ def fetch_associated_info(search_string):
             abort(transaction_trytes_status_code)
         elif transaction_trytes_status_code == 200:
             if not transaction_trytes['trytes']:
+                transactions_ref = TransactionHashModel.objects.filter(hash=search_string)
+                transaction_obj = [res.as_json() for res in transactions_ref]
+
+                if not transaction_obj:
+                    return jsonify({
+                        'type': 'transaction',
+                        'payload': []
+                    })
+
+                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
+
                 return jsonify({
                     'type': 'transaction',
-                    'payload': []
+                    'payload': [res.as_json() for res in txs]
                 })
 
             all_transaction_objects = []
@@ -105,9 +139,20 @@ def fetch_associated_info(search_string):
             abort(bundles_status_code)
         elif bundles_status_code == 200:
             if not bundles['hashes']:
+                bundle_hash_ref = BundleHashModel.objects.filter(bundle_hash=search_string)
+                bundle_obj = [res.as_json() for res in bundle_hash_ref]
+
+                if not bundle_obj:
+                    return jsonify({
+                        'type': 'bundle',
+                        'payload': []
+                    })
+
+                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in bundle_obj])
+
                 return jsonify({
                     'type': 'bundle',
-                    'payload': []
+                    'payload': [res.as_json() for res in txs]
                 })
 
             transaction_trytes, transaction_trytes_status_code = api.get_trytes(bundles['hashes'])
