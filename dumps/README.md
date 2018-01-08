@@ -1,6 +1,6 @@
 ### Cassandra setup
 
-This setup assumes you have a local instance of cassandra running. In case you are connecting to a remote node(s), you can change the hosts in `store`py`.
+This setup assumes you have a local instance of cassandra running. In case you are connecting to a remote node(s), you can change the hosts in `store.py`.
 
 #### Note: You can spin a cassandra container via `docker-compose up -d cassandra`.
 
