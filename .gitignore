@@ -28,3 +28,6 @@ instance/
 .venv
 venv/
 ENV/
+
+# dumps
+*.dmp
