@@ -6,7 +6,7 @@ from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
 from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
 from permanode.search import search
 from permanode.shared.iota_api import IotaApi
-from permanode.search.helpers import transform_with_persistence
+from permanode.search.helpers import transform_with_persistence, with_nines
 
 
 @search.route('/<search_string>', methods=['GET'])
@@ -17,13 +17,15 @@ def fetch_associated_info(search_string):
     api = IotaApi()
 
     if len(search_string) <= 27:
-        tags, tags_status_code = api.find_transactions(tags=[search_string])
+        full_length_tag = with_nines(search_string, 27 - len(search_string))
+
+        tags, tags_status_code = api.find_transactions(tags=[full_length_tag])
 
         if tags_status_code == 503 or tags_status_code == 400:
             abort(tags_status_code)
         elif tags_status_code == 200:
             if not tags['hashes']:
-                tag_ref = TagModel.objects.filter(tag=search_string)
+                tag_ref = TagModel.objects.filter(tag=full_length_tag)
                 tag_obj = [res.as_json() for res in tag_ref]
 
                 if not tag_obj:

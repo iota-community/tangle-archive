@@ -18,3 +18,10 @@ def transform_with_persistence(all_txs, states):
             del tx[prop]
 
     return all_txs_clone
+
+
+def with_nines(string, max_range):
+    for i in range(max_range):
+        string += str(9)
+
+    return string
