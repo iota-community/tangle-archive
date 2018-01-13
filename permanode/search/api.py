@@ -1,8 +1,12 @@
+from __future__ import print_function
+import sys
+
 from flask import jsonify, abort
-from iota import Address, Bundle, Transaction, TryteString, Tag
+from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
 from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
 from permanode.search import search
 from permanode.shared.iota_api import IotaApi
+from permanode.search.helpers import transform_with_persistence
 
 
 @search.route('/<search_string>', methods=['GET'])
@@ -23,10 +27,7 @@ def fetch_associated_info(search_string):
                 tag_obj = [res.as_json() for res in tag_ref]
 
                 if not tag_obj:
-                    return jsonify({
-                        'type': 'tag',
-                        'payload': []
-                    })
+                    return jsonify([])
 
                 txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
 
@@ -43,15 +44,21 @@ def fetch_associated_info(search_string):
 
                 all_transaction_objects.append(transaction_inst.as_json_compatible())
 
+            hashes = [tx['hash_'] for tx in all_transaction_objects]
+
+            inclusion_states, inclusion_states_status_code = api.get_latest_inclusions(hashes)
+
+            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+                abort(inclusion_states_status_code)
+
+            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])  # Would be good to check the key
+
             return jsonify({
                 'type': 'tag',
-                'payload': all_transaction_objects
+                'payload': txs_with_persistence
             })
 
-        return jsonify({
-            'type': 'tag',
-            'payload': []
-        })
+        return jsonify([])
 
     if len(search_string) == 90:
         addresses, addresses_status_code = api.find_transactions(addresses=[search_string[:-9]])
@@ -64,10 +71,7 @@ def fetch_associated_info(search_string):
                 addresses_obj = [res.as_json() for res in addresses_ref]
 
                 if not addresses_obj:
-                    return jsonify({
-                        'type': 'address',
-                        'payload': []
-                    })
+                    return jsonify([])
 
                 txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
 
@@ -84,15 +88,21 @@ def fetch_associated_info(search_string):
 
                 all_transaction_objects.append(transaction_inst.as_json_compatible())
 
+            hashes = [tx['hash_'] for tx in all_transaction_objects]
+
+            inclusion_states, inclusion_states_status_code = api.get_latest_inclusions(hashes)
+
+            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+                abort(inclusion_states_status_code)
+
+            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+
             return jsonify({
                 'type': 'address',
-                'payload': all_transaction_objects
+                'payload': txs_with_persistence
             })
 
-        return jsonify({
-            'type': 'address',
-            'payload': []
-        })
+        return jsonify([])
 
     if len(search_string) == 81 and search_string.endswith('999'):
         transaction_trytes, transaction_trytes_status_code = api.get_trytes([search_string])
@@ -105,10 +115,7 @@ def fetch_associated_info(search_string):
                 transaction_obj = [res.as_json() for res in transactions_ref]
 
                 if not transaction_obj:
-                    return jsonify({
-                        'type': 'transaction',
-                        'payload': []
-                    })
+                    return jsonify([])
 
                 txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
 
@@ -122,15 +129,20 @@ def fetch_associated_info(search_string):
                 transaction_inst = Transaction.from_tryte_string(tryte)
                 all_transaction_objects.append(transaction_inst.as_json_compatible())
 
+            hashes = [tx['hash_'] for tx in all_transaction_objects]
+
+            inclusion_states, inclusion_states_status_code = api.get_latest_inclusions(hashes)
+
+            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+                abort(inclusion_states_status_code)
+
+            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
             return jsonify({
                 'type': 'transaction',
-                'payload': all_transaction_objects
+                'payload': txs_with_persistence
             })
 
-        return jsonify({
-            'type': 'transaction',
-            'payload': []
-        })
+        return jsonify([])
 
     if len(search_string) == 81 and not search_string.endswith('999'):
         bundles, bundles_status_code = api.find_transactions(bundles=[search_string])
@@ -143,10 +155,7 @@ def fetch_associated_info(search_string):
                 bundle_obj = [res.as_json() for res in bundle_hash_ref]
 
                 if not bundle_obj:
-                    return jsonify({
-                        'type': 'bundle',
-                        'payload': []
-                    })
+                    return jsonify([])
 
                 txs = TransactionModel.objects.filter(id__in=[t['id'] for t in bundle_obj])
 
@@ -157,16 +166,20 @@ def fetch_associated_info(search_string):
 
             transaction_trytes, transaction_trytes_status_code = api.get_trytes(bundles['hashes'])
 
-            bundle_inst = Bundle.from_tryte_strings(transaction_trytes['trytes'])
+            bundle_inst = Bundle.from_tryte_strings(transaction_trytes['trytes']).as_json_compatible()
+            hashes = [tx['hash_'] for tx in bundle_inst]
 
+            inclusion_states, inclusion_states_status_code = api.get_latest_inclusions(hashes)
+
+            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+                abort(inclusion_states_status_code)
+
+            bundle_with_persistence = transform_with_persistence(bundle_inst, inclusion_states['states'])
             return jsonify({
                 'type': 'bundle',
-                'payload': bundle_inst.as_json_compatible()
+                'payload': bundle_with_persistence
             })
 
-        return jsonify({
-            'type': 'bundle',
-            'payload': []
-        })
+        return jsonify([])
 
     abort(404)
