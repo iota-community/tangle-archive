@@ -11,7 +11,7 @@ class IotaApi:
         }
 
         self.method = None
-        self.url = 'http://148.251.181.105:14265/'
+        self.url = 'https://www.veriti.io'
         self.command = None
 
     def _make_request(self):

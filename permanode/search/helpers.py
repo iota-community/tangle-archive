@@ -1,7 +1,5 @@
-from permanode.shared.iota_api import IotaApi
 from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
 from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
-from permanode.search import search
 from permanode.shared.iota_api import IotaApi
 
 
@@ -32,6 +30,13 @@ def with_nines(string, max_range):
         string += str(9)
 
     return string
+
+
+def has_all_digits(trytes):
+    try:
+        return trytes[0].isdigit()
+    except IndexError:
+        return False
 
 
 class Search:
@@ -142,6 +147,43 @@ class Search:
 
         return self.get_txs_for_bundle_hash()
 
+    def _grab_txs_from_db(self):
+        transactions_ref = TransactionHashModel.objects.filter(hash=self.search_for)
+        transaction_obj = [res.as_json() for res in transactions_ref]
+
+        if not transaction_obj:
+            return list()
+
+        txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
+
+        payload = {
+            'type': 'transaction',
+            'payload': [res.as_json() for res in txs]
+        } if len(txs) > 0 else list()
+
+        return payload
+
+    def _construct_transaction_objects(self, transaction_trytes):
+        all_transaction_objects = []
+        for tryte in transaction_trytes:
+            transaction_inst = Transaction.from_tryte_string(tryte)
+            all_transaction_objects.append(transaction_inst.as_json_compatible())
+
+        hashes = [tx['hash_'] for tx in all_transaction_objects]
+
+        inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
+
+        if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+            return None
+
+        txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+        payload = {
+            'type': 'transaction',
+            'payload': txs_with_persistence
+        } if len(txs_with_persistence) > 0 else list()
+
+        return payload
+
     def get_txs(self):
         transaction_trytes, transaction_trytes_status_code = self.api.get_trytes([self.search_for])
 
@@ -149,40 +191,11 @@ class Search:
             return None
         elif transaction_trytes_status_code == 200:
             if not transaction_trytes['trytes']:
-                transactions_ref = TransactionHashModel.objects.filter(hash=search_string)
-                transaction_obj = [res.as_json() for res in transactions_ref]
+                return self._grab_txs_from_db()
 
-                if not transaction_obj:
-                    return list()
-
-                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
-
-                payload = {
-                    'type': 'transaction',
-                    'payload': [res.as_json() for res in txs]
-                } if len(txs) > 0 else list()
-
-                return payload
-
-            all_transaction_objects = []
-            for tryte in transaction_trytes['trytes']:
-                transaction_inst = Transaction.from_tryte_string(tryte)
-                all_transaction_objects.append(transaction_inst.as_json_compatible())
-
-            hashes = [tx['hash_'] for tx in all_transaction_objects]
-
-            inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
-
-            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
-                return None
-
-            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
-            payload = {
-                'type': 'transaction',
-                'payload': txs_with_persistence
-            } if len(txs_with_persistence) > 0 else list()
-
-            return payload
+            return self._construct_transaction_objects(transaction_trytes['trytes'])\
+                if not has_all_digits(transaction_trytes['trytes'])\
+                else self._grab_txs_from_db()
 
         return None
 
