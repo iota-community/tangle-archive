@@ -1,5 +1,6 @@
 from http_request import HttpRequest
 import json
+from iota.json import JsonEncoder
 
 
 class IotaApi:
@@ -10,7 +11,7 @@ class IotaApi:
         }
 
         self.method = None
-        self.url = 'http://148.251.181.105:14265/'
+        self.url = 'https://www.veriti.io'
         self.command = None
 
     def _make_request(self):
@@ -18,7 +19,7 @@ class IotaApi:
                 self.method,
                 self.url,
                 headers=self.headers,
-                data=json.dumps(self.command),
+                data=json.dumps(self.command, cls=JsonEncoder),
             )
 
         if res is None:
@@ -104,11 +105,17 @@ class IotaApi:
 
         return self._make_request()
 
-    def get_inclusion_states(self, transactions, tips):
+    def get_latest_inclusions(self, transactions):
+        node_info, node_info_status_code = self.get_node_info()
+
+        if not node_info:
+            return node_info, node_info_status_code
+
+        latest_milestone = node_info['latestSolidSubtangleMilestone']
         self.command = {
-            'command':'getInclusionStates',
+            'command': 'getInclusionStates',
             'transactions': transactions,
-            'tips': tips
+            'tips': [latest_milestone]
         }
 
         self.method = 'GET'
