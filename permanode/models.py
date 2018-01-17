@@ -51,7 +51,8 @@ class TransactionModel(Base):
             "bundle_hash": self.bundle_hash,
             "trunk_transaction_hash": self.trunk_transaction_hash,
             "branch_transaction_hash": self.branch_transaction_hash,
-            "nonce": self.nonce
+            "nonce": self.nonce,
+            "persistence": True  # since all txs from db are confirmed
         }
 
 
