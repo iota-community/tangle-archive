@@ -52,7 +52,8 @@ class Search:
         if not addresses_obj:
             return list()
 
-        return TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+        txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+        return [res.as_json() for res in txs]
 
     @staticmethod
     def grab_txs_for_tag_from_db(tag):
@@ -62,7 +63,8 @@ class Search:
         if not tag_obj:
             return list()
 
-        return TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+        txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+        return [res.as_json() for res in txs]
 
     def get_txs_for_address(self):
         address_without_checksum = self.search_for[:-9] if len(self.search_for) == 90 else self.search_for
