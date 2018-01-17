@@ -44,32 +44,50 @@ class Search:
         self.search_for = search_for
         self.api = IotaApi()
 
+    @staticmethod
+    def grab_txs_for_address_from_db(address):
+        addresses_ref = AddressModel.objects.filter(address=address)
+        addresses_obj = [res.as_json() for res in addresses_ref]
+
+        if not addresses_obj:
+            return list()
+
+        return TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+
+    @staticmethod
+    def grab_txs_for_tag_from_db(tag):
+        tag_ref = TagModel.objects.filter(tag=tag)
+        tag_obj = [res.as_json() for res in tag_ref]
+
+        if not tag_obj:
+            return list()
+
+        return TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+
     def get_txs_for_address(self):
         address_without_checksum = self.search_for[:-9] if len(self.search_for) == 90 else self.search_for
 
         addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
 
+        all_transaction_objects = []
+
+        txs = Search.grab_txs_for_address_from_db(address_without_checksum)
+
+        for tx in txs:
+            all_transaction_objects.append(tx)
+
         if addresses_status_code == 503 or addresses_status_code == 400:
             return None
         elif addresses_status_code == 200:
             if not addresses['hashes']:
-                addresses_ref = AddressModel.objects.filter(address=address_without_checksum)
-                addresses_obj = [res.as_json() for res in addresses_ref]
-
-                if not addresses_obj:
-                    return list()
-
-                txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
-
                 payload = {
                     'type': 'address',
-                    'payload': [res.as_json() for res in txs]
-                } if len(txs) > 0 else list()
+                    'payload': all_transaction_objects
+                } if len(all_transaction_objects) > 0 else list()
 
                 return payload
 
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(addresses['hashes'])
-            all_transaction_objects = []
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
@@ -204,27 +222,25 @@ class Search:
 
         tags, tags_status_code = self.api.find_transactions(tags=[full_length_tag])
 
+        all_transaction_objects = []
+
+        txs = Search.grab_txs_for_tag_from_db(full_length_tag)
+
+        for tx in txs:
+            all_transaction_objects.append(tx)
+
         if tags_status_code == 503 or tags_status_code == 400:
             return None
         elif tags_status_code == 200:
             if not tags['hashes']:
-                tag_ref = TagModel.objects.filter(tag=full_length_tag)
-                tag_obj = [res.as_json() for res in tag_ref]
-
-                if not tag_obj:
-                    return list()
-
-                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
-
                 payload = {
                     'type': 'tag',
-                    'payload': [res.as_json() for res in txs]
-                } if len(txs) > 0 else list()
+                    'payload': all_transaction_objects
+                } if len(all_transaction_objects) > 0 else list()
 
                 return payload
 
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(tags['hashes'])
-            all_transaction_objects = []
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
