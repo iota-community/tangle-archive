@@ -70,14 +70,22 @@ class Search:
         addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
 
         all_transaction_objects = []
+
+        txs = Search.grab_txs_for_address_from_db(address_without_checksum)
+
+        for tx in txs:
+            all_transaction_objects.append(tx)
+
         if addresses_status_code == 503 or addresses_status_code == 400:
             return None
         elif addresses_status_code == 200:
             if not addresses['hashes']:
-                txs = Search.grab_txs_for_address_from_db(address_without_checksum)
+                payload = {
+                    'type': 'address',
+                    'payload': all_transaction_objects
+                } if len(all_transaction_objects) > 0 else list()
 
-                for tx in txs:
-                    all_transaction_objects.append(tx)
+                return payload
 
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(addresses['hashes'])
 
@@ -216,15 +224,22 @@ class Search:
 
         all_transaction_objects = []
 
+        txs = Search.grab_txs_for_tag_from_db(full_length_tag)
+
+        for tx in txs:
+            all_transaction_objects.append(tx)
+
         if tags_status_code == 503 or tags_status_code == 400:
             return None
         elif tags_status_code == 200:
             if not tags['hashes']:
-                txs = Search.grab_txs_for_tag_from_db(full_length_tag)
+                payload = {
+                    'type': 'tag',
+                    'payload': all_transaction_objects
+                } if len(all_transaction_objects) > 0 else list()
 
-                for tx in txs:
-                    all_transaction_objects.append(tx)
-                    
+                return payload
+
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(tags['hashes'])
 
             for tryte in transaction_trytes['trytes']:
