@@ -264,8 +264,8 @@ class Search:
 
             payload = {
                 'type': 'tag',
-                'payload': txs_with_persistence + all_full_node_transaction_objects
-            } if len(txs_with_persistence + all_full_node_transaction_objects) > 0 else list()
+                'payload': txs_with_persistence + all_db_transaction_objects
+            } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
 
             return payload
 
