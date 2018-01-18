@@ -17,7 +17,7 @@ def transform_with_persistence(all_txs, states):
     for index, tx in enumerate(all_txs_clone):
         tx['persistence'] = states[index]
         tx['address'] = tx['address'].address
-        tx['minWeightMagnitude'] = trailing_zeros(tx['hash_'])
+        tx['min_weight_magnitude'] = trailing_zeros(tx['hash_'])
 
         for prop in irrelevant_props:
             # safe to mutate
