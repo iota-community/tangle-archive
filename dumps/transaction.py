@@ -99,8 +99,7 @@ class transaction:
 
     @staticmethod
     def trailing_zeros(trytes):
-        trytes = TryteString(trytes)
-        trits = trytes.as_trits()
+        trits = transaction.trytes_to_trits(trytes)
         n = len(trits) - 1
         z = 0
         for i in range(0, n):
