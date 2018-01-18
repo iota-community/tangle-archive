@@ -46,6 +46,8 @@ class transaction:
         if self.timestamp > 0:
             self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)
 
+        #convert transaction hash to min_weight_magnitude
+        self.value =
 
     # Helpers
 
@@ -97,3 +99,16 @@ class transaction:
         for i in range(len(array)):
             bigint += array[i] * (base ** i)
         return bigint
+
+    @staticmethod
+    def trailing_zeros(trytes):
+        trytes = TryteString(trytes)
+        trits = trytes.as_trits()
+        n = len(trits) - 1
+        z = 0
+        for i in range(0, n):
+            if trits[n - i] == 0:
+                z += 1
+            else:
+                break
+        return z
