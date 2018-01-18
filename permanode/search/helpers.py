@@ -39,6 +39,14 @@ def has_all_digits(trytes):
         return False
 
 
+def has_network_error(status_code):
+    return status_code == 503 or status_code == 400
+
+
+def has_no_network_error(status_code):
+    return status_code == 200
+
+
 class Search:
     def __init__(self, search_for):
         self.search_for = search_for
@@ -69,22 +77,44 @@ class Search:
     def get_txs_for_address(self):
         address_without_checksum = self.search_for[:-9] if len(self.search_for) == 90 else self.search_for
 
-        addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
-
         all_db_transaction_objects = []
+        balance = 0
 
         txs = Search.grab_txs_for_address_from_db(address_without_checksum)
 
         for tx in txs:
             all_db_transaction_objects.append(tx)
 
-        if addresses_status_code == 503 or addresses_status_code == 400:
+        '''
+        Check for latest balance associated with the address
+        
+        '''
+
+        latest_balances, balance_status_code = self.api.get_balances([address_without_checksum])
+
+        if has_network_error(balance_status_code):
             return None
-        elif addresses_status_code == 200:
+        elif has_no_network_error(balance_status_code):
+            if latest_balances['balances']:
+                balance = latest_balances['balances'][0]
+
+        '''
+        Check for latest balance associated with the address
+
+        '''
+
+        addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
+
+        if has_network_error(addresses_status_code):
+            return None
+        elif has_no_network_error(addresses_status_code):
             if not addresses['hashes']:
                 payload = {
                     'type': 'address',
-                    'payload': all_db_transaction_objects
+                    'payload': {
+                        'balance': balance,
+                        'transactions': all_db_transaction_objects
+                    }
                 } if len(all_db_transaction_objects) > 0 else list()
 
                 return payload
@@ -101,14 +131,17 @@ class Search:
 
             inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
-            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+            if has_network_error(inclusion_states_status_code):
                 return None
 
             txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states['states'])
 
             payload = {
                 'type': 'address',
-                'payload': txs_with_persistence + all_db_transaction_objects
+                'payload': {
+                    'balance': balance,
+                    'transactions': txs_with_persistence + all_db_transaction_objects
+                }
             } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
 
             return payload
@@ -118,9 +151,9 @@ class Search:
     def get_txs_for_bundle_hash(self):
         bundles, bundles_status_code = self.api.find_transactions(bundles=[self.search_for])
 
-        if bundles_status_code == 503 or bundles_status_code == 400:
+        if has_network_error(bundles_status_code):
             return None
-        elif bundles_status_code == 200:
+        elif has_no_network_error(bundles_status_code):
             if not bundles['hashes']:
                 bundle_hash_ref = BundleHashModel.objects.filter(bundle_hash=self.search_for)
                 bundle_obj = [res.as_json() for res in bundle_hash_ref]
@@ -144,7 +177,7 @@ class Search:
 
             inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
-            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+            if has_network_error(inclusion_states_status_code):
                 return None
 
             bundle_with_persistence = transform_with_persistence(bundle_inst, inclusion_states['states'])
@@ -194,7 +227,7 @@ class Search:
 
         inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
-        if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+        if has_network_error(inclusion_states_status_code):
             return None
 
         txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
@@ -208,9 +241,9 @@ class Search:
     def get_txs(self):
         transaction_trytes, transaction_trytes_status_code = self.api.get_trytes([self.search_for])
 
-        if transaction_trytes_status_code == 503 or transaction_trytes_status_code == 400:
+        if has_network_error(transaction_trytes_status_code):
             return None
-        elif transaction_trytes_status_code == 200:
+        elif has_no_network_error(transaction_trytes_status_code):
             if not transaction_trytes['trytes']:
                 return self._grab_txs_from_db()
 
@@ -232,9 +265,9 @@ class Search:
         for tx in txs:
             all_db_transaction_objects.append(tx)
 
-        if tags_status_code == 503 or tags_status_code == 400:
+        if has_network_error(tags_status_code):
             return None
-        elif tags_status_code == 200:
+        elif has_no_network_error(tags_status_code):
             if not tags['hashes']:
                 payload = {
                     'type': 'tag',
@@ -256,7 +289,7 @@ class Search:
 
             inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
-            if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
+            if has_network_error(inclusion_states_status_code):
                 return None
 
             txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states[

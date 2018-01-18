@@ -122,11 +122,11 @@ class IotaApi:
 
         return self._make_request()
 
-    def get_balances(self, addresses, threshold):
+    def get_balances(self, addresses, threshold=100):
         self.command = {
             'command': 'getBalances',
             'addresses': addresses,
-            'threshold': 100
+            'threshold': threshold
         }
 
         self.method = 'GET'
