@@ -87,7 +87,7 @@ class Search:
 
         '''
         Check for latest balance associated with the address
-        
+
         '''
 
         latest_balances, balance_status_code = self.api.get_balances([address_without_checksum])
