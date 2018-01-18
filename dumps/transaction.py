@@ -46,9 +46,6 @@ class transaction:
         if self.timestamp > 0:
             self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)
 
-        #convert transaction hash to min_weight_magnitude
-        self.value =
-
     # Helpers
 
     tryte_table = {
