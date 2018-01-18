@@ -1,5 +1,3 @@
-from __future__ import print_function
-import sys
 from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
 from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
 from permanode.shared.iota_api import IotaApi
@@ -93,7 +91,6 @@ class Search:
         '''
 
         latest_balances, balance_status_code = self.api.get_balances([address_without_checksum])
-        print(latest_balances, file=sys.stderr)
 
         if has_network_error(balance_status_code):
             return None

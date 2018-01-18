@@ -3,7 +3,7 @@ class BaseConfig:
     cassandra configuration
     """
 
-    CASSANDRA_HOSTS = ['cassandra']
+    CASSANDRA_HOSTS = ['13.90.99.22']
     CASSANDRA_KEYSPACE = 'cqlengine'
 
     @staticmethod
