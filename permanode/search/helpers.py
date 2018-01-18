@@ -52,7 +52,8 @@ class Search:
         if not addresses_obj:
             return list()
 
-        return TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+        txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+        return [res.as_json() for res in txs]
 
     @staticmethod
     def grab_txs_for_tag_from_db(tag):
@@ -62,19 +63,20 @@ class Search:
         if not tag_obj:
             return list()
 
-        return TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+        txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+        return [res.as_json() for res in txs]
 
     def get_txs_for_address(self):
         address_without_checksum = self.search_for[:-9] if len(self.search_for) == 90 else self.search_for
 
         addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
 
-        all_transaction_objects = []
+        all_db_transaction_objects = []
 
         txs = Search.grab_txs_for_address_from_db(address_without_checksum)
 
         for tx in txs:
-            all_transaction_objects.append(tx)
+            all_db_transaction_objects.append(tx)
 
         if addresses_status_code == 503 or addresses_status_code == 400:
             return None
@@ -82,31 +84,32 @@ class Search:
             if not addresses['hashes']:
                 payload = {
                     'type': 'address',
-                    'payload': all_transaction_objects
-                } if len(all_transaction_objects) > 0 else list()
+                    'payload': all_db_transaction_objects
+                } if len(all_db_transaction_objects) > 0 else list()
 
                 return payload
 
+            all_full_node_transaction_objects = []
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(addresses['hashes'])
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
 
-                all_transaction_objects.append(transaction_inst.as_json_compatible())
+                all_full_node_transaction_objects.append(transaction_inst.as_json_compatible())
 
-            hashes = [tx['hash_'] for tx in all_transaction_objects]
+            hashes = [tx['hash_'] for tx in all_full_node_transaction_objects]
 
             inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
             if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
                 return None
 
-            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+            txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states['states'])
 
             payload = {
                 'type': 'address',
-                'payload': txs_with_persistence
-            } if len(txs_with_persistence) > 0 else list()
+                'payload': txs_with_persistence + all_db_transaction_objects
+            } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
 
             return payload
 
@@ -222,12 +225,12 @@ class Search:
 
         tags, tags_status_code = self.api.find_transactions(tags=[full_length_tag])
 
-        all_transaction_objects = []
+        all_db_transaction_objects = []
 
         txs = Search.grab_txs_for_tag_from_db(full_length_tag)
 
         for tx in txs:
-            all_transaction_objects.append(tx)
+            all_db_transaction_objects.append(tx)
 
         if tags_status_code == 503 or tags_status_code == 400:
             return None
@@ -235,32 +238,34 @@ class Search:
             if not tags['hashes']:
                 payload = {
                     'type': 'tag',
-                    'payload': all_transaction_objects
-                } if len(all_transaction_objects) > 0 else list()
+                    'payload': all_db_transaction_objects
+                } if len(all_db_transaction_objects) > 0 else list()
 
                 return payload
+
+            all_full_node_transaction_objects = []
 
             transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(tags['hashes'])
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
 
-                all_transaction_objects.append(transaction_inst.as_json_compatible())
+                all_full_node_transaction_objects.append(transaction_inst.as_json_compatible())
 
-            hashes = [tx['hash_'] for tx in all_transaction_objects]
+            hashes = [tx['hash_'] for tx in all_full_node_transaction_objects]
 
             inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
 
             if inclusion_states_status_code == 503 or inclusion_states_status_code == 400:
                 return None
 
-            txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states[
+            txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states[
                 'states'])  # Would be good to check the key
 
             payload = {
                 'type': 'tag',
-                'payload': txs_with_persistence
-            } if len(txs_with_persistence) > 0 else list()
+                'payload': txs_with_persistence + all_db_transaction_objects
+            } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
 
             return payload
 

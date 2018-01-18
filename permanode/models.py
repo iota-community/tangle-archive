@@ -43,7 +43,7 @@ class TransactionModel(Base):
             "value": self.value,
             "timestamp": self.transaction_time,
             "hash": self.hash,
-            "signature_message_format": self.signature_message_fragment,
+            "signature_message_fragment": self.signature_message_fragment,
             "tag": self.tag,
             "tag_index": self.tag_index,
             "current_index": self.current_index,
