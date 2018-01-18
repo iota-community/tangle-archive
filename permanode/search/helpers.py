@@ -39,6 +39,19 @@ def has_all_digits(trytes):
         return False
 
 
+def trailing_zeros(trytes):
+    trytes = TryteString(trytes)
+    trits = trytes.as_trits()
+    n = len(trits) - 1
+    z = 0
+    for i in range(0, n):
+        if trits[n - i] == 0:
+            z += 1
+        else:
+            break
+    return z
+
+
 def has_network_error(status_code):
     return status_code == 503 or status_code == 400
 
