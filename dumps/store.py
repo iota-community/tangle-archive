@@ -1,7 +1,7 @@
 import os
 import uuid
 import transaction
-from schema import TransactionHash, Transactions, Address, Tag, BundleHash
+from schema import TransactionHash, Transactions, Address, Tag, BundleHash, TrunkTransactionHash, BranchTransactionHash
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine import connection
 from cassandra.cqlengine.query import LWTException
@@ -17,6 +17,8 @@ def sync_tables():
     sync_table(Address)
     sync_table(Tag)
     sync_table(BundleHash)
+    sync_table(TrunkTransactionHash)
+    sync_table(BranchTransactionHash)
 
 
 class Store:
@@ -42,7 +44,7 @@ class Store:
                 nonce=tx.nonce,
                 min_weight_magnitude=tx.min_weight_magnitude
             )
-            
+
         except LWTException as e:
             print e
 
@@ -53,6 +55,28 @@ class Store:
             TransactionHash.if_not_exists().create(
                 id=_id,
                 hash=tx.hash
+            )
+        except LWTException as e:
+            print e
+
+        return self
+
+    def store_to_branch_transaction_hash(self, _id, tx):
+        try:
+            BranchTransactionHash.if_not_exists().create(
+                id=_id,
+                branch=tx.branch_transaction_hash
+            )
+        except LWTException as e:
+            print e
+
+        return self
+
+    def store_to_trunk_transaction_hash(self, _id, tx):
+        try:
+            TrunkTransactionHash.if_not_exists().create(
+                id=_id,
+                trunk=tx.trunk_transaction_hash
             )
         except LWTException as e:
             print e
@@ -107,7 +131,9 @@ class Store:
                             .store_to_transactions_hash_table(_id, tx)\
                             .store_to_address_table(_id, tx)\
                             .store_to_bundle_hash_table(_id, tx)\
-                            .store_to_tag_table(_id, tx)
+                            .store_to_tag_table(_id, tx)\
+                            .store_to_branch_transaction_hash(_id, tx)\
+                            .store_to_trunk_transaction_hash(_id, tx)
 
                         count += 1
                         print 'Dumped so far', count

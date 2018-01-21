@@ -37,7 +37,7 @@ class BundleHash(Model):
     __keyspace__ = KEYSPACE
 
     bundle_hash = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
 
 class Tag(Model):
@@ -45,7 +45,7 @@ class Tag(Model):
     __keyspace__ = KEYSPACE
 
     tag = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
 
 class Address(Model):
@@ -53,4 +53,20 @@ class Address(Model):
     __keyspace__ = KEYSPACE
 
     address = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+
+class TrunkTransactionHash(Model):
+    __table_name__ = 'trunk_transaction_hash'
+    __keyspace__ = KEYSPACE
+
+    trunk = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+
+class BranchTransactionHash(Model):
+    __table_name__ = 'branch_transaction_hash'
+    __keyspace__ = KEYSPACE
+
+    branch = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
