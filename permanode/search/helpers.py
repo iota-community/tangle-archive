@@ -1,5 +1,8 @@
+from __future__ import print_function
+import sys
 from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
-from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
+from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel,\
+    TransactionHashModel, TrunkTransactionHashModel, BranchTransactionHashModel
 from permanode.shared.iota_api import IotaApi
 
 
@@ -217,6 +220,11 @@ class Search:
 
         return self.get_txs_for_bundle_hash()
 
+    '''
+        Grab transactions from transactions table
+        Compute children by searching branch and trunk transactions
+    
+    '''
     def _grab_txs_from_db(self):
         transactions_ref = TransactionHashModel.objects.filter(hash=self.search_for)
         transaction_obj = [res.as_json() for res in transactions_ref]
@@ -225,10 +233,23 @@ class Search:
             return list()
 
         txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
+        branch_transactions_hashes = BranchTransactionHashModel.objects.filter(branch=self.search_for)
+        trunk_transactions_hashes = TrunkTransactionHashModel.objects.filter(trunk=self.search_for)
+
+        children_objs = [res.as_json() for res in trunk_transactions_hashes] +\
+                        [res.as_json() for res in branch_transactions_hashes]
+
+        # Organize all children if any
+        children_txs = TransactionModel.objects.filter(
+            id__in=[t['id'] for t in children_objs]
+        ) if children_objs else list()
 
         payload = {
             'type': 'transaction',
-            'payload': [res.as_json() for res in txs]
+            'payload': {
+                'transactions': [tx.as_json() for tx in txs],
+                'children': [child.as_json()['hash'] for child in children_txs]
+            }
         } if len(txs) > 0 else list()
 
         return payload

@@ -106,3 +106,29 @@ class AddressModel(Base):
             "id": self.id,
             "address": self.address
         }
+
+
+class BranchTransactionHashModel(Base):
+    __table_name__ = 'branch_transaction_hash'
+
+    branch = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+    def as_json(self):
+        return {
+            "id": self.id,
+            "branch": self.branch
+        }
+
+
+class TrunkTransactionHashModel(Base):
+    __table_name__ = 'trunk_transaction_hash'
+
+    trunk = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+    def as_json(self):
+        return {
+            "id": self.id,
+            "trunk": self.trunk
+        }
