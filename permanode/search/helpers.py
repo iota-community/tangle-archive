@@ -248,7 +248,7 @@ class Search:
             'type': 'transaction',
             'payload': {
                 'transactions': [tx.as_json() for tx in txs],
-                'children': [child.as_json() for child in children_txs] # Might need to just return hashes
+                'children': [child.as_json()['hash'] for child in children_txs]
             }
         } if len(txs) > 0 else list()
 
