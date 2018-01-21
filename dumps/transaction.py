@@ -22,8 +22,9 @@ class transaction:
         self.trunk_transaction_hash = tryte_string[2430:2511]
         self.branch_transaction_hash = tryte_string[2511:2592]
         self.nonce = tryte_string[2592:2673]
-        self.format()
+        self.min_weight_magnitude = None
 
+        self.format()
 
     def format(self):
         # convert tryte values to numbers:
@@ -45,6 +46,11 @@ class transaction:
             self.timestamp /= 1000L
         if self.timestamp > 0:
             self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)
+
+        '''
+            Add min weight magnitude
+        '''
+        self.min_weight_magnitude = transaction.trailing_zeros(self.hash)
 
     # Helpers
 

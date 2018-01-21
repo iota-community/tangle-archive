@@ -39,8 +39,10 @@ class Store:
                 bundle_hash=tx.bundle_hash,
                 trunk_transaction_hash=tx.trunk_transaction_hash,
                 branch_transaction_hash=tx.branch_transaction_hash,
-                nonce=tx.nonce
+                nonce=tx.nonce,
+                min_weight_magnitude=tx.min_weight_magnitude
             )
+            
         except LWTException as e:
             print e
 
