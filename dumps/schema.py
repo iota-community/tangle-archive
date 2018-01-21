@@ -22,6 +22,7 @@ class Transactions(Model):
     trunk_transaction_hash = columns.Text()
     branch_transaction_hash = columns.Text()
     nonce = columns.Text()
+    min_weight_magnitude = columns.Integer()
 
 
 class TransactionHash(Model):

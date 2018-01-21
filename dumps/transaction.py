@@ -33,15 +33,23 @@ class transaction:
         self.current_index = transaction.trytes_to_number(self.current_index)
         self.last_index = transaction.trytes_to_number(self.last_index)
 
-        #clean up edge values:
+        '''
+        Clean up edge values
+        '''
         self.tagIndex = transaction.trytes_to_number(self.tag)
         if self.tagIndex > 150354 or self.tagIndex < 0:
             self.tagIndex = 0
-        #remove redundant all9 signatures
+
+        '''
+        Remove redundant all9 signatures
+        
+        '''
         if self.signature_message_fragment[:81] == all_nines:
             self.signature_message_fragment = ""
 
-        #format timestamp as date:
+        '''
+            Format timestamp as date:
+        '''
         if self.timestamp > 1262304000000L:
             self.timestamp /= 1000L
         if self.timestamp > 0:
