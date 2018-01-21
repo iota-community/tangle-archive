@@ -1,5 +1,3 @@
-from __future__ import print_function
-import sys
 from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
 from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel,\
     TransactionHashModel, TrunkTransactionHashModel, BranchTransactionHashModel
@@ -248,7 +246,7 @@ class Search:
             'type': 'transaction',
             'payload': {
                 'transactions': [tx.as_json() for tx in txs],
-                'children': [child.as_json()['hash'] for child in children_txs]
+                'approvees': [child.as_json()['hash'] for child in children_txs]
             }
         } if len(txs) > 0 else list()
 
@@ -268,9 +266,20 @@ class Search:
             return None
 
         txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+
+        approvees_hashes, approvees_hashes_status_code = self.api.find_transactions(
+            approvees=[txs_with_persistence[0]['hash']]
+        )  # txs_with_persistence assigns hash_ to hash
+
+        if has_network_error(approvees_hashes_status_code):
+            return None
+
         payload = {
             'type': 'transaction',
-            'payload': txs_with_persistence
+            'payload': {
+                'transactions': txs_with_persistence,
+                'approvees': approvees_hashes['hashes']
+            }
         } if len(txs_with_persistence) > 0 else list()
 
         return payload
