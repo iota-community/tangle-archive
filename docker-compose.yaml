@@ -8,3 +8,10 @@ services:
         - "9080:9080"
       volumes:
         - .:/permanode
+    cassandra:
+      image: cassandra:2.2.8
+      hostname: cassandra
+      ports:
+        - 9042:9042
+      volumes:
+        - /var/lib/cassandra:/var/lib/cassandra
