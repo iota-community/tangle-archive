@@ -7,17 +7,6 @@ class Base(db.Model):
     __keyspace__ = "permanode"
 
 
-class AddressTokenReceivedModel(Base):
-    __table_name__ = "table_tokens_revieved_by_address"
-    address = columns.Text(primary_key=True)
-    total_tokens_received = columns.Counter()
-
-    def get_data(self):
-        return {
-            "total_tokens_received": self.total_tokens_received
-        }
-
-
 class TransactionModel(Base):
     __table_name__ = "transactions"
 
