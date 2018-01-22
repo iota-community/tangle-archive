@@ -22,8 +22,9 @@ class transaction:
         self.trunk_transaction_hash = tryte_string[2430:2511]
         self.branch_transaction_hash = tryte_string[2511:2592]
         self.nonce = tryte_string[2592:2673]
-        self.format()
+        self.min_weight_magnitude = None
 
+        self.format()
 
     def format(self):
         # convert tryte values to numbers:
@@ -32,20 +33,32 @@ class transaction:
         self.current_index = transaction.trytes_to_number(self.current_index)
         self.last_index = transaction.trytes_to_number(self.last_index)
 
-        #clean up edge values:
+        '''
+        Clean up edge values
+        '''
         self.tagIndex = transaction.trytes_to_number(self.tag)
         if self.tagIndex > 150354 or self.tagIndex < 0:
             self.tagIndex = 0
-        #remove redundant all9 signatures
+
+        '''
+        Remove redundant all9 signatures
+        
+        '''
         if self.signature_message_fragment[:81] == all_nines:
             self.signature_message_fragment = ""
 
-        #format timestamp as date:
+        '''
+            Format timestamp as date:
+        '''
         if self.timestamp > 1262304000000L:
             self.timestamp /= 1000L
         if self.timestamp > 0:
             self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)
 
+        '''
+            Add min weight magnitude
+        '''
+        self.min_weight_magnitude = transaction.trailing_zeros(self.hash)
 
     # Helpers
 
@@ -97,3 +110,15 @@ class transaction:
         for i in range(len(array)):
             bigint += array[i] * (base ** i)
         return bigint
+
+    @staticmethod
+    def trailing_zeros(trytes):
+        trits = transaction.trytes_to_trits(trytes)
+        n = len(trits) - 1
+        z = 0
+        for i in range(0, n):
+            if trits[n - i] == 0:
+                z += 1
+            else:
+                break
+        return z

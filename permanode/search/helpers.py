@@ -1,5 +1,6 @@
 from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
-from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel, TransactionHashModel
+from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel,\
+    TransactionHashModel, TrunkTransactionHashModel, BranchTransactionHashModel
 from permanode.shared.iota_api import IotaApi
 
 
@@ -12,11 +13,14 @@ def transform_with_persistence(all_txs, states):
         'legacy_tag',
         'attachment_timestamp',
         'attachment_timestamp_lower_bound',
-        'attachment_timestamp_upper_bound'
+        'attachment_timestamp_upper_bound',
+        'hash_'
     ]
     for index, tx in enumerate(all_txs_clone):
         tx['persistence'] = states[index]
         tx['address'] = tx['address'].address
+        tx['min_weight_magnitude'] = trailing_zeros(tx['hash_'])
+        tx['hash'] = tx['hash_']
 
         for prop in irrelevant_props:
             # safe to mutate
@@ -37,6 +41,19 @@ def has_all_digits(trytes):
         return trytes[0].isdigit()
     except IndexError:
         return False
+
+
+def trailing_zeros(trytes):
+    trytes = TryteString(trytes)
+    trits = trytes.as_trits()
+    n = len(trits) - 1
+    z = 0
+    for i in range(0, n):
+        if trits[n - i] == 0:
+            z += 1
+        else:
+            break
+    return z
 
 
 def has_network_error(status_code):
@@ -87,7 +104,7 @@ class Search:
 
         '''
         Check for latest balance associated with the address
-        
+
         '''
 
         latest_balances, balance_status_code = self.api.get_balances([address_without_checksum])
@@ -201,6 +218,11 @@ class Search:
 
         return self.get_txs_for_bundle_hash()
 
+    '''
+        Grab transactions from transactions table
+        Compute children by searching branch and trunk transactions
+    
+    '''
     def _grab_txs_from_db(self):
         transactions_ref = TransactionHashModel.objects.filter(hash=self.search_for)
         transaction_obj = [res.as_json() for res in transactions_ref]
@@ -209,10 +231,23 @@ class Search:
             return list()
 
         txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
+        branch_transactions_hashes = BranchTransactionHashModel.objects.filter(branch=self.search_for)
+        trunk_transactions_hashes = TrunkTransactionHashModel.objects.filter(trunk=self.search_for)
+
+        children_objs = [res.as_json() for res in trunk_transactions_hashes] +\
+                        [res.as_json() for res in branch_transactions_hashes]
+
+        # Organize all children if any
+        children_txs = TransactionModel.objects.filter(
+            id__in=[t['id'] for t in children_objs]
+        ) if children_objs else list()
 
         payload = {
             'type': 'transaction',
-            'payload': [res.as_json() for res in txs]
+            'payload': {
+                'transactions': [tx.as_json() for tx in txs],
+                'approvees': [child.as_json()['hash'] for child in children_txs]
+            }
         } if len(txs) > 0 else list()
 
         return payload
@@ -231,9 +266,20 @@ class Search:
             return None
 
         txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+
+        approvees_hashes, approvees_hashes_status_code = self.api.find_transactions(
+            approvees=[txs_with_persistence[0]['hash']]
+        )  # txs_with_persistence assigns hash_ to hash
+
+        if has_network_error(approvees_hashes_status_code):
+            return None
+
         payload = {
             'type': 'transaction',
-            'payload': txs_with_persistence
+            'payload': {
+                'transactions': txs_with_persistence,
+                'approvees': approvees_hashes['hashes']
+            }
         } if len(txs_with_persistence) > 0 else list()
 
         return payload

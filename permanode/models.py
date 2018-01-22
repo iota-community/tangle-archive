@@ -34,6 +34,7 @@ class TransactionModel(Base):
     bundle_hash = columns.Text()
     trunk_transaction_hash = columns.Text()
     branch_transaction_hash = columns.Text()
+    min_weight_magnitude = columns.Integer()
     nonce = columns.Text()
 
     def as_json(self):
@@ -52,6 +53,7 @@ class TransactionModel(Base):
             "trunk_transaction_hash": self.trunk_transaction_hash,
             "branch_transaction_hash": self.branch_transaction_hash,
             "nonce": self.nonce,
+            "min_weight_magnitude": self.min_weight_magnitude,
             "persistence": True  # since all txs from db are confirmed
         }
 
@@ -105,4 +107,30 @@ class AddressModel(Base):
         return {
             "id": self.id,
             "address": self.address
+        }
+
+
+class BranchTransactionHashModel(Base):
+    __table_name__ = 'branch_transaction_hash'
+
+    branch = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+    def as_json(self):
+        return {
+            "id": self.id,
+            "branch": self.branch
+        }
+
+
+class TrunkTransactionHashModel(Base):
+    __table_name__ = 'trunk_transaction_hash'
+
+    trunk = columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
+
+    def as_json(self):
+        return {
+            "id": self.id,
+            "trunk": self.trunk
         }
