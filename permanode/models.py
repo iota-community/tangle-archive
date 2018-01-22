@@ -64,7 +64,7 @@ class BundleHashModel(Base):
     __table_name__ = 'bundle_hash'
 
     bundle_hash = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {
@@ -77,7 +77,7 @@ class TagModel(Base):
     __table_name__ = 'tag'
 
     tag = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {
@@ -90,7 +90,7 @@ class AddressModel(Base):
     __table_name__ = 'address'
 
     address = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {

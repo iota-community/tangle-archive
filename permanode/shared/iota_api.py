@@ -74,7 +74,13 @@ class IotaApi:
 
         return self._make_request()
 
-    def find_transactions(self, addresses=None, bundles=None, tags=None, approvees=None):
+    def find_transactions(
+            self,
+            addresses=None,
+            bundles=None,
+            tags=None,
+            approvees=None
+    ):
         self.command = {
             'command': 'findTransactions'
         }
@@ -143,12 +149,18 @@ class IotaApi:
 
         return self._make_request()
 
-    def attach_to_tangle(self, trunkTransaction, branchTransaction, minWeightMagnitude, trytes):
+    def attach_to_tangle(
+            self,
+            trunk_transaction,
+            branch_transaction,
+            min_weight_magnitude,
+            trytes
+    ):
         self.command = {
             'command': 'attachToTangle',
-            'trunkTransaction': trunkTransaction,
-            'branchTransaction': branchTransaction,
-            'minWeightMagnitude': minWeightMagnitude,
+            'trunkTransaction': trunk_transaction,
+            'branchTransaction': branch_transaction,
+            'minWeightMagnitude': min_weight_magnitude,
             'trytes': trytes
         }
 

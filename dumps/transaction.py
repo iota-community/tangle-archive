@@ -1,6 +1,7 @@
 import datetime
 
-all_nines = '999999999999999999999999999999999999999999999999999999999999999999999999999999999'
+all_nines = '999999999999999999999999999999999999999999999999999999999999999999999999999999999'  # noqa: E501
+
 
 """
 Thanks to Alon
@@ -9,7 +10,7 @@ Thanks to Alon
 
 
 class transaction:
-    def __init__(self,tryte_string, hash_string):
+    def __init__(self, tryte_string, hash_string):
         self.hash = hash_string
         self.signature_message_fragment = tryte_string[0:2187]
         self.address = tryte_string[2187:2268]
@@ -42,7 +43,6 @@ class transaction:
 
         '''
         Remove redundant all9 signatures
-        
         '''
         if self.signature_message_fragment[:81] == all_nines:
             self.signature_message_fragment = ""
@@ -53,7 +53,7 @@ class transaction:
         if self.timestamp > 1262304000000L:
             self.timestamp /= 1000L
         if self.timestamp > 0:
-            self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)
+            self.timestampDate = datetime.datetime.fromtimestamp(self.timestamp)  # noqa: E501
 
         '''
             Add min weight magnitude
@@ -92,10 +92,9 @@ class transaction:
         'Z': [-1, 0, 0],  # -1
     }
 
-
     @staticmethod
     def trytes_to_number(trytes):
-        return transaction.convertBaseToBigint(transaction.trytes_to_trits(trytes))
+        return transaction.convertBaseToBigint(transaction.trytes_to_trits(trytes))  # noqa: E501
 
     @staticmethod
     def trytes_to_trits(trytes):

@@ -15,7 +15,7 @@ flask_server.add_command('dev', Server(host='0.0.0.0', port=int(port)))
 @flask_server.command
 def sync():
     """
-    Sync database 
+        Sync database
     """
     db.sync_db()
 
