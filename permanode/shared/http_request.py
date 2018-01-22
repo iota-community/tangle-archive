@@ -4,7 +4,15 @@ from requests.packages.urllib3.util.retry import Retry
 
 
 class HttpRequest:
-    def __init__(self, method, url, data=None, headers=None, auth=None, timeout=10):
+    def __init__(
+            self,
+            method,
+            url,
+            data=None,
+            headers=None,
+            auth=None,
+            timeout=10
+    ):
         self.headers = headers
         self.auth = auth
         self.data = data
@@ -16,7 +24,13 @@ class HttpRequest:
 
         self.make_request(method)
 
-    def _requests_retry_session(self, retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None):
+    def _requests_retry_session(
+            self,
+            retries=3,
+            backoff_factor=0.3,
+            status_forcelist=(500, 502, 504),
+            session=None
+    ):
         method_whitelist = ["GET", "PUT", "POST", "DELETE"]
         session = session or requests.Session()
         retry = Retry(
@@ -49,5 +63,5 @@ class HttpRequest:
             self.status_code = res.status_code
 
             return res
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as e:  # noqa: F841
             return None

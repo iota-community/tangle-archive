@@ -7,17 +7,6 @@ class Base(db.Model):
     __keyspace__ = "permanode"
 
 
-class AddressTokenReceivedModel(Base):
-    __table_name__ = "table_tokens_revieved_by_address"
-    address = columns.Text(primary_key=True)
-    total_tokens_received = columns.Counter()
-
-    def get_data(self):
-        return {
-            "total_tokens_received": self.total_tokens_received
-        }
-
-
 class TransactionModel(Base):
     __table_name__ = "transactions"
 
@@ -75,7 +64,7 @@ class BundleHashModel(Base):
     __table_name__ = 'bundle_hash'
 
     bundle_hash = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {
@@ -88,7 +77,7 @@ class TagModel(Base):
     __table_name__ = 'tag'
 
     tag = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {
@@ -101,7 +90,7 @@ class AddressModel(Base):
     __table_name__ = 'address'
 
     address = columns.Text(primary_key=True)
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
 
     def as_json(self):
         return {

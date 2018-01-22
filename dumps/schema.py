@@ -8,7 +8,7 @@ class Transactions(Model):
     __table_name__ = 'transactions'
     __keyspace__ = KEYSPACE
 
-    id=columns.Text(primary_key=True)
+    id = columns.Text(primary_key=True)
     address = columns.Text()
     value = columns.BigInt()
     transaction_time = columns.Integer()

@@ -1,7 +1,8 @@
 import os
 import uuid
 import transaction
-from schema import TransactionHash, Transactions, Address, Tag, BundleHash, TrunkTransactionHash, BranchTransactionHash
+from schema import TransactionHash, Transactions, Address, Tag,\
+    BundleHash, TrunkTransactionHash, BranchTransactionHash
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine import connection
 from cassandra.cqlengine.query import LWTException

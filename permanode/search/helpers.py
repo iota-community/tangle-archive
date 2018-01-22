@@ -1,6 +1,8 @@
-from iota import Address, Bundle, Transaction, TransactionHash, TryteString, Tag
-from permanode.models import AddressModel, TransactionModel, BundleHashModel, TagModel,\
-    TransactionHashModel, TrunkTransactionHashModel, BranchTransactionHashModel
+from iota import Bundle, Transaction, TryteString
+from permanode.models import AddressModel,\
+    TransactionModel, BundleHashModel, TagModel,\
+    TransactionHashModel, TrunkTransactionHashModel,\
+    BranchTransactionHashModel
 from permanode.shared.iota_api import IotaApi
 
 
@@ -77,7 +79,10 @@ class Search:
         if not addresses_obj:
             return list()
 
-        txs = TransactionModel.objects.filter(id__in=[addr['id'] for addr in addresses_obj])
+        txs = TransactionModel.objects.filter(
+            id__in=[addr['id'] for addr in addresses_obj]
+        )
+
         return [res.as_json() for res in txs]
 
     @staticmethod
@@ -88,11 +93,16 @@ class Search:
         if not tag_obj:
             return list()
 
-        txs = TransactionModel.objects.filter(id__in=[t['id'] for t in tag_obj])
+        txs = TransactionModel.objects.filter(
+            id__in=[t['id'] for t in tag_obj]
+        )
+
         return [res.as_json() for res in txs]
 
     def get_txs_for_address(self):
-        address_without_checksum = self.search_for[:-9] if len(self.search_for) == 90 else self.search_for
+        address_without_checksum = self.search_for[:-9] if len(
+            self.search_for
+        ) == 90 else self.search_for
 
         all_db_transaction_objects = []
         balance = 0
@@ -107,7 +117,9 @@ class Search:
 
         '''
 
-        latest_balances, balance_status_code = self.api.get_balances([address_without_checksum])
+        latest_balances, balance_status_code = self.api.get_balances(
+            [address_without_checksum]
+        )
 
         if has_network_error(balance_status_code):
             return None
@@ -120,7 +132,9 @@ class Search:
 
         '''
 
-        addresses, addresses_status_code = self.api.find_transactions(addresses=[address_without_checksum])
+        addresses, addresses_status_code = self.api.find_transactions(
+            addresses=[address_without_checksum]
+        )
 
         if has_network_error(addresses_status_code):
             return None
@@ -137,48 +151,66 @@ class Search:
                 return payload
 
             all_full_node_transaction_objects = []
-            transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(addresses['hashes'])
+            transaction_trytes,\
+                transaction_trytes_status_code = self.api.get_trytes(
+                    addresses['hashes']
+                )
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
 
-                all_full_node_transaction_objects.append(transaction_inst.as_json_compatible())
+                all_full_node_transaction_objects.append(
+                    transaction_inst.as_json_compatible()
+                )
 
             hashes = [tx['hash_'] for tx in all_full_node_transaction_objects]
 
-            inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
+            inclusion_states,\
+                inclusion_states_status_code = self.api.get_latest_inclusions(
+                    hashes
+                )
 
             if has_network_error(inclusion_states_status_code):
                 return None
 
-            txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states['states'])
+            txs_with_persistence = transform_with_persistence(
+                all_full_node_transaction_objects, inclusion_states['states']
+            )
 
             payload = {
                 'type': 'address',
                 'payload': {
                     'balance': balance,
-                    'transactions': txs_with_persistence + all_db_transaction_objects
+                    'transactions': txs_with_persistence + all_db_transaction_objects  # noqa: E501
                 }
-            } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
+            } if len(
+                txs_with_persistence + all_db_transaction_objects
+            ) > 0 else list()
 
             return payload
 
         return None
 
     def get_txs_for_bundle_hash(self):
-        bundles, bundles_status_code = self.api.find_transactions(bundles=[self.search_for])
+        bundles, bundles_status_code = self.api.find_transactions(
+            bundles=[self.search_for]
+        )
 
         if has_network_error(bundles_status_code):
             return None
         elif has_no_network_error(bundles_status_code):
             if not bundles['hashes']:
-                bundle_hash_ref = BundleHashModel.objects.filter(bundle_hash=self.search_for)
+                bundle_hash_ref = BundleHashModel.objects.filter(
+                    bundle_hash=self.search_for
+                )
                 bundle_obj = [res.as_json() for res in bundle_hash_ref]
 
                 if not bundle_obj:
                     return list()
 
-                txs = TransactionModel.objects.filter(id__in=[t['id'] for t in bundle_obj])
+                txs = TransactionModel.objects.filter(
+                    id__in=[t['id'] for t in bundle_obj]
+                )
 
                 payload = {
                     'type': 'bundle',
@@ -187,17 +219,25 @@ class Search:
 
                 return payload
 
-            transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(bundles['hashes'])
+            transaction_trytes,\
+                transaction_trytes_status_code = self.api.get_trytes(
+                    bundles['hashes']
+                )
 
-            bundle_inst = Bundle.from_tryte_strings(transaction_trytes['trytes']).as_json_compatible()
+            bundle_inst = Bundle.from_tryte_strings(
+                transaction_trytes['trytes']
+            ).as_json_compatible()
             hashes = [tx['hash_'] for tx in bundle_inst]
 
-            inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
+            inclusion_states,\
+                inclusion_states_status_code = self.api.get_latest_inclusions(hashes)  # noqa: E501
 
             if has_network_error(inclusion_states_status_code):
                 return None
 
-            bundle_with_persistence = transform_with_persistence(bundle_inst, inclusion_states['states'])
+            bundle_with_persistence = transform_with_persistence(
+                bundle_inst, inclusion_states['states']
+            )
 
             payload = {
                 'type': 'bundle',
@@ -211,9 +251,11 @@ class Search:
     def get_txs_for_bundle_hash_or_address(self):
         addresses_payload = self.get_txs_for_address()
 
-        if not isinstance(addresses_payload, dict) and addresses_payload is None:
+        if not isinstance(addresses_payload, dict) and\
+                addresses_payload is None:
             return None
-        elif isinstance(addresses_payload, dict) and addresses_payload is not None:
+        elif isinstance(addresses_payload, dict) and\
+                addresses_payload is not None:
             return addresses_payload
 
         return self.get_txs_for_bundle_hash()
@@ -221,18 +263,25 @@ class Search:
     '''
         Grab transactions from transactions table
         Compute children by searching branch and trunk transactions
-    
     '''
     def _grab_txs_from_db(self):
-        transactions_ref = TransactionHashModel.objects.filter(hash=self.search_for)
+        transactions_ref = TransactionHashModel.objects.filter(
+            hash=self.search_for
+        )
         transaction_obj = [res.as_json() for res in transactions_ref]
 
         if not transaction_obj:
             return list()
 
-        txs = TransactionModel.objects.filter(id__in=[t['id'] for t in transaction_obj])
-        branch_transactions_hashes = BranchTransactionHashModel.objects.filter(branch=self.search_for)
-        trunk_transactions_hashes = TrunkTransactionHashModel.objects.filter(trunk=self.search_for)
+        txs = TransactionModel.objects.filter(
+            id__in=[t['id'] for t in transaction_obj]
+        )
+        branch_transactions_hashes = BranchTransactionHashModel.objects.filter(
+            branch=self.search_for
+        )
+        trunk_transactions_hashes = TrunkTransactionHashModel.objects.filter(
+            trunk=self.search_for
+        )
 
         children_objs = [res.as_json() for res in trunk_transactions_hashes] +\
                         [res.as_json() for res in branch_transactions_hashes]
@@ -246,7 +295,9 @@ class Search:
             'type': 'transaction',
             'payload': {
                 'transactions': [tx.as_json() for tx in txs],
-                'approvees': [child.as_json()['hash'] for child in children_txs]
+                'approvees': [
+                    child.as_json()['hash'] for child in children_txs
+                ]
             }
         } if len(txs) > 0 else list()
 
@@ -256,20 +307,26 @@ class Search:
         all_transaction_objects = []
         for tryte in transaction_trytes:
             transaction_inst = Transaction.from_tryte_string(tryte)
-            all_transaction_objects.append(transaction_inst.as_json_compatible())
+            all_transaction_objects.append(
+                transaction_inst.as_json_compatible()
+            )
 
         hashes = [tx['hash_'] for tx in all_transaction_objects]
 
-        inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
+        inclusion_states,\
+            inclusion_states_status_code = self.api.get_latest_inclusions(hashes)  # noqa: E501
 
         if has_network_error(inclusion_states_status_code):
             return None
 
-        txs_with_persistence = transform_with_persistence(all_transaction_objects, inclusion_states['states'])
+        txs_with_persistence = transform_with_persistence(
+            all_transaction_objects, inclusion_states['states']
+        )
 
-        approvees_hashes, approvees_hashes_status_code = self.api.find_transactions(
-            approvees=[txs_with_persistence[0]['hash']]
-        )  # txs_with_persistence assigns hash_ to hash
+        approvees_hashes,\
+            approvees_hashes_status_code = self.api.find_transactions(
+                approvees=[txs_with_persistence[0]['hash']]
+            )  # txs_with_persistence assigns hash_ to hash
 
         if has_network_error(approvees_hashes_status_code):
             return None
@@ -285,7 +342,10 @@ class Search:
         return payload
 
     def get_txs(self):
-        transaction_trytes, transaction_trytes_status_code = self.api.get_trytes([self.search_for])
+        transaction_trytes, \
+            transaction_trytes_status_code = self.api.get_trytes(
+                [self.search_for]
+            )
 
         if has_network_error(transaction_trytes_status_code):
             return None
@@ -293,16 +353,22 @@ class Search:
             if not transaction_trytes['trytes']:
                 return self._grab_txs_from_db()
 
-            return self._construct_transaction_objects(transaction_trytes['trytes'])\
-                if not has_all_digits(transaction_trytes['trytes'])\
-                else self._grab_txs_from_db()
+            return self._construct_transaction_objects(
+                transaction_trytes['trytes']
+            ) if not has_all_digits(
+                transaction_trytes['trytes']
+            ) else self._grab_txs_from_db()
 
         return None
 
     def get_txs_for_tag(self):
-        full_length_tag = with_nines(self.search_for, 27 - len(self.search_for))
+        full_length_tag = with_nines(
+            self.search_for, 27 - len(self.search_for)
+        )
 
-        tags, tags_status_code = self.api.find_transactions(tags=[full_length_tag])
+        tags, tags_status_code = self.api.find_transactions(
+            tags=[full_length_tag]
+        )
 
         all_db_transaction_objects = []
 
@@ -324,27 +390,39 @@ class Search:
 
             all_full_node_transaction_objects = []
 
-            transaction_trytes, transaction_trytes_status_code = self.api.get_trytes(tags['hashes'])
+            transaction_trytes, \
+                transaction_trytes_status_code = self.api.get_trytes(
+                    tags['hashes']
+                )
 
             for tryte in transaction_trytes['trytes']:
                 transaction_inst = Transaction.from_tryte_string(tryte)
 
-                all_full_node_transaction_objects.append(transaction_inst.as_json_compatible())
+                all_full_node_transaction_objects.append(
+                    transaction_inst.as_json_compatible()
+                )
 
             hashes = [tx['hash_'] for tx in all_full_node_transaction_objects]
 
-            inclusion_states, inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
+            inclusion_states,\
+                inclusion_states_status_code = self.api.get_latest_inclusions(
+                    hashes
+                )
 
             if has_network_error(inclusion_states_status_code):
                 return None
 
-            txs_with_persistence = transform_with_persistence(all_full_node_transaction_objects, inclusion_states[
-                'states'])  # Would be good to check the key
+            txs_with_persistence = transform_with_persistence(
+                all_full_node_transaction_objects,
+                inclusion_states['states']
+            )  # Would be good to check the key
 
             payload = {
                 'type': 'tag',
                 'payload': txs_with_persistence + all_db_transaction_objects
-            } if len(txs_with_persistence + all_db_transaction_objects) > 0 else list()
+            } if len(
+                txs_with_persistence + all_db_transaction_objects
+            ) > 0 else list()
 
             return payload
 
