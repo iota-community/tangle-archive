@@ -1,3 +1,6 @@
+import ssl
+
+
 class BaseConfig:
     """
     cassandra configuration
@@ -13,9 +16,21 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    port = 9080
+    port = 8080
+
+
+class ProductionConfig(BaseConfig):
+    ssl_options = {
+                      'ca_certs': './certs/rootCa.crt',
+                      'ssl_version': ssl.PROTOCOL_TLSv1
+                  }
+    # Setting cassandra args for ssl_options
+    CASSANDRA_SETUP_KWARGS = {
+        'ssl_options': ssl_options
+    }
 
 
 config = {
-    'development': DevelopmentConfig
+    'development': DevelopmentConfig,
+    'production': ProductionConfig
 }

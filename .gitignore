@@ -31,3 +31,7 @@ ENV/
 
 # dumps
 *.dmp
+
+# Encryption
+# ===========
+certs/
