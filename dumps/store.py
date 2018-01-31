@@ -1,15 +1,45 @@
+"""
+
+Usage:
+  store.py [-e <env>]
+
+Options:
+    -e  --env <env>
+      Name of environment that will be used.
+
+"""
+
+
 import os
 import uuid
 import transaction
 from schema import TransactionHash, Transactions, Address, Tag,\
     BundleHash, TrunkTransactionHash, BranchTransactionHash
+from docopt import docopt
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine import connection
 from cassandra.cqlengine.query import LWTException
 
+
 folder = './'
 
-connection.setup(['127.0.0.1'], 'cqlengine', protocol_version=3)
+
+def is_development(env):
+    return env is 'development'
+
+
+def create_connection(env):
+    if is_development(env):
+        connection.setup(['127.0.0.1'], 'cqlengine', protocol_version=3)
+    else:
+        connection.setup(
+           ['127.0.0.1'],
+           'cqlengine',
+           protocol_version=3,
+           ssl_options={
+                'ca_certs': '../certs/rootCa.crt'
+           }
+        )
 
 
 def sync_tables():
@@ -140,5 +170,18 @@ class Store:
                         print 'Dumped so far', count
 
 
-sync_tables()
-Store()
+if __name__ == '__main__':
+    arguments = docopt(__doc__)
+    allowed_envs = ['development', 'production']
+
+    current_env = None
+    specified_env = arguments['<env>']
+
+    if specified_env not in allowed_envs:
+        current_env = 'development'
+    else:
+        current_env = specified_env
+
+    create_connection(current_env)
+    sync_tables()
+    Store()
