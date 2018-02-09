@@ -1,6 +1,3 @@
-from __future__ import print_function
-import sys
-
 from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
@@ -18,16 +15,12 @@ class IotaApi:
         self.url = 'http://iota-tangle.io:14265'
 
     def __make_request(self, command):
-        print(command['command'], file=sys.stderr)
-
         res = HttpRequest(
                 self.method,
                 self.url,
                 headers=self.headers,
                 data=json.dumps(command, cls=JsonEncoder),
             )
-
-        print(res.response, file=sys.stderr)
 
         if res is None:
             return None, 503
@@ -44,8 +37,6 @@ class IotaApi:
             **kwargs
     ):
 
-        print('kwargs', file=sys.stderr)
-        print(kwargs, file=sys.stderr)
         command = find_transactions(kwargs)
 
         return self.__make_request(command)
