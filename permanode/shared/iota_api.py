@@ -1,6 +1,10 @@
+from __future__ import print_function
+import sys
+
 from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
+from api_commands import *
 
 
 class IotaApi:
@@ -10,17 +14,20 @@ class IotaApi:
             'X-IOTA-API-Version': '1'
         }
 
-        self.method = None
-        self.url = 'http://148.251.181.105:14265/'
-        self.command = None
+        self.method = 'GET'
+        self.url = 'http://iota-tangle.io:14265'
 
-    def _make_request(self):
+    def __make_request(self, command):
+        print(command['command'], file=sys.stderr)
+
         res = HttpRequest(
                 self.method,
                 self.url,
                 headers=self.headers,
-                data=json.dumps(self.command, cls=JsonEncoder),
+                data=json.dumps(command, cls=JsonEncoder),
             )
+
+        print(res.response, file=sys.stderr)
 
         if res is None:
             return None, 503
@@ -28,88 +35,25 @@ class IotaApi:
         return res.response, res.status_code
 
     def get_node_info(self):
-        self.command = {
-            'command': 'getNodeInfo'
-        }
+        command = get_node_info()
 
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def get_neighbors(self):
-        self.command = {
-            'command': 'getNeighbors'
-        }
-
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def add_neighbors(self, uris):
-        self.command = {
-            'command': 'addNeighbors',
-            'uris': uris
-        }
-
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def remove_neighbors(self, uris):
-        self.command = {
-            'command': 'removeNeighbors',
-            'uris': uris
-        }
-
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def get_tips(self):
-        self.command = {
-            'command': 'getTips'
-        }
-
-        self.method = 'GET'
-
-        return self._make_request()
+        return self.__make_request(command)
 
     def find_transactions(
             self,
-            addresses=None,
-            bundles=None,
-            tags=None,
-            approvees=None
+            **kwargs
     ):
-        self.command = {
-            'command': 'findTransactions'
-        }
 
-        self.method = 'GET'
+        print('kwargs', file=sys.stderr)
+        print(kwargs, file=sys.stderr)
+        command = find_transactions(kwargs)
 
-        if addresses:
-            self.command['addresses'] = addresses
-
-        if bundles:
-            self.command['bundles'] = bundles
-
-        if tags:
-            self.command['tags'] = tags
-
-        if approvees:
-            self.command['approvees'] = approvees
-
-        return self._make_request()
+        return self.__make_request(command)
 
     def get_trytes(self, hashes):
-        self.command = {
-            'command': 'getTrytes',
-            'hashes': hashes
-        }
+        command = get_trytes(hashes)
 
-        self.method = 'GET'
-
-        return self._make_request()
+        return self.__make_request(command)
 
     def get_latest_inclusions(self, transactions):
         node_info, node_info_status_code = self.get_node_info()
@@ -118,81 +62,12 @@ class IotaApi:
             return node_info, node_info_status_code
 
         latest_milestone = node_info['latestSolidSubtangleMilestone']
-        self.command = {
-            'command': 'getInclusionStates',
-            'transactions': transactions,
-            'tips': [latest_milestone]
-        }
 
-        self.method = 'GET'
+        command = get_inclusion_states(transactions, [latest_milestone])
 
-        return self._make_request()
+        return self.__make_request(command)
 
     def get_balances(self, addresses, threshold=100):
-        self.command = {
-            'command': 'getBalances',
-            'addresses': addresses,
-            'threshold': threshold
-        }
+        command = get_balances(addresses, threshold)
 
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def get_transactions_to_approve(self, depth):
-        self.command = {
-            'command': 'getTransactionsToApprove',
-            'depth': depth
-        }
-
-        self.method = 'GET'
-
-        return self._make_request()
-
-    def attach_to_tangle(
-            self,
-            trunk_transaction,
-            branch_transaction,
-            min_weight_magnitude,
-            trytes
-    ):
-        self.command = {
-            'command': 'attachToTangle',
-            'trunkTransaction': trunk_transaction,
-            'branchTransaction': branch_transaction,
-            'minWeightMagnitude': min_weight_magnitude,
-            'trytes': trytes
-        }
-
-        self.method = 'POST'
-
-        return self._make_request()
-
-    def interrupt_attaching_to_tangle(self):
-        self.command = {
-            'command': 'interruptAttachingToTangle',
-        }
-
-        self.method = 'POST'
-
-        return self._make_request()
-
-    def broadcast_transactions(self, trytes):
-        self.command = {
-            'command': 'broadcastTransactions',
-            'trytes': trytes
-        }
-
-        self.method = 'POST'
-
-        return self._make_request()
-
-    def store_transactions(self, trytes):
-        self.command = {
-            'command': 'storeTransactions',
-            'trytes': trytes
-        }
-
-        self.method = 'POST'
-
-        return self._make_request()
+        return self.__make_request(command)
