@@ -4,70 +4,54 @@ from cassandra.cqlengine.models import Model
 KEYSPACE = 'permanode'
 
 
-class Transactions(Model):
+class Transaction(Model):
     __table_name__ = 'transactions'
     __keyspace__ = KEYSPACE
 
-    id = columns.Text(primary_key=True)
+    hash = columns.Text(primary_key=True)
     address = columns.Text()
     value = columns.BigInt()
     transaction_time = columns.Integer()
-    hash = columns.Text()
     signature_message_fragment = columns.Text()
     tag = columns.Text()
     tag_index = columns.BigInt()
     current_index = columns.Integer()
     last_index = columns.Integer()
-    bundle_hash = columns.Text()
+    bundle = columns.Text()
     trunk_transaction_hash = columns.Text()
     branch_transaction_hash = columns.Text()
     nonce = columns.Text()
     min_weight_magnitude = columns.Integer()
+    approvees = columns.Set(columns.Text)
 
 
-class TransactionHash(Model):
-    __table_name__ = 'transaction_hash'
+class Bundle(Model):
+    __table_name__ = 'bundles'
     __keyspace__ = KEYSPACE
 
-    hash = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
-
-
-class BundleHash(Model):
-    __table_name__ = 'bundle_hash'
-    __keyspace__ = KEYSPACE
-
-    bundle_hash = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
+    bundle = columns.Text(primary_key=True)
+    hashes = columns.Set(columns.Text)
 
 
 class Tag(Model):
-    __table_name__ = 'tag'
+    __table_name__ = 'tags'
     __keyspace__ = KEYSPACE
 
     tag = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
+    hashes = columns.Set(columns.Text)
 
 
 class Address(Model):
-    __table_name__ = 'address'
+    __table_name__ = 'addresses'
     __keyspace__ = KEYSPACE
 
     address = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
+    hashes = columns.Set(columns.Text)
 
 
-class TrunkTransactionHash(Model):
-    __table_name__ = 'trunk_transaction_hash'
+class Approvee(Model):
+    __table_name__ = 'approvees'
     __keyspace__ = KEYSPACE
 
-    trunk = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
-
-
-class BranchTransactionHash(Model):
-    __table_name__ = 'branch_transaction_hash'
-    __keyspace__ = KEYSPACE
-
-    branch = columns.Text(primary_key=True)
-    id = columns.Text(primary_key=True)
+    hash = columns.Text(primary_key=True)
+    approvees = columns.Set(columns.Text)

@@ -13,8 +13,8 @@ Options:
 import os
 import uuid
 import transaction
-from schema import TransactionHash, Transactions, Address, Tag,\
-    BundleHash, TrunkTransactionHash, BranchTransactionHash
+from schema import Transaction, Address, Tag,\
+    Bundle, Approvee
 from docopt import docopt
 from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine import connection
@@ -43,23 +43,17 @@ def create_connection(env):
 
 
 def sync_tables():
-    sync_table(Transactions)
-    sync_table(TransactionHash)
+    sync_table(Transaction)
     sync_table(Address)
-    sync_table(Tag)
-    sync_table(BundleHash)
-    sync_table(TrunkTransactionHash)
-    sync_table(BranchTransactionHash)
 
 
 class Store:
     def __init__(self):
         self.extract_dump()
 
-    def store_to_transactions_table(self, _id, tx):
+    def store_to_transactions_table(self, tx):
         try:
-            Transactions.if_not_exists().create(
-                id=_id,
+            Transaction.if_not_exists().create(
                 address=tx.address,
                 value=tx.value,
                 transaction_time=tx.timestamp,
@@ -69,7 +63,7 @@ class Store:
                 tag_index=tx.tagIndex,
                 current_index=tx.current_index,
                 last_index=tx.last_index,
-                bundle_hash=tx.bundle_hash,
+                bundle=tx.bundle_hash,
                 trunk_transaction_hash=tx.trunk_transaction_hash,
                 branch_transaction_hash=tx.branch_transaction_hash,
                 nonce=tx.nonce,
@@ -81,67 +75,50 @@ class Store:
 
         return self
 
-    def store_to_transactions_hash_table(self, _id, tx):
+    def store_branch_hash(self, tx):
         try:
-            TransactionHash.if_not_exists().create(
-                id=_id,
-                hash=tx.hash
+            Transaction.if_not_exists().create(
+                hash=tx.branch_transaction_hash
             )
+
         except LWTException as e:
             print e
 
         return self
 
-    def store_to_branch_transaction_hash(self, _id, tx):
+    def store_trunk_hash(self, tx):
         try:
-            BranchTransactionHash.if_not_exists().create(
-                id=_id,
-                branch=tx.branch_transaction_hash
+            Transaction.if_not_exists().create(
+                hash=tx.trunk_transaction_hash
             )
+
         except LWTException as e:
             print e
 
         return self
 
-    def store_to_trunk_transaction_hash(self, _id, tx):
+    def store_to_address_table(self, tx):
         try:
-            TrunkTransactionHash.if_not_exists().create(
-                id=_id,
-                trunk=tx.trunk_transaction_hash
+            Address.objects(address=tx.address).update(
+                hashes__add={tx.hash}
             )
+
         except LWTException as e:
             print e
 
         return self
 
-    def store_to_bundle_hash_table(self, _id, tx):
+    def update_transaction_with_this_branch(self, tx):
         try:
-            BundleHash.if_not_exists().create(
-                id=_id,
-                bundle_hash=tx.bundle_hash
+            transaction_obj = Transaction.objects(tx.branch).filter(
+                hash=tx.branch_transaction_hash
             )
-        except LWTException as e:
-            print e
 
-        return self
+            if transaction_obj:
+                Transaction.objects(hash=tx.branch_transaction_hash).update(
+                    approvees__add={tx.hash}
+                )
 
-    def store_to_tag_table(self, _id, tx):
-        try:
-            Tag.if_not_exists().create(
-                id=_id,
-                tag=tx.tag
-            )
-        except LWTException as e:
-            print e
-
-        return self
-
-    def store_to_address_table(self, _id, tx):
-        try:
-            Address.if_not_exists().create(
-                id=_id,
-                address=tx.address
-            )
         except LWTException as e:
             print e
 
@@ -156,15 +133,8 @@ class Store:
                         tx_hash, tx = line.split(',')
                         tx = transaction.transaction(tx, tx_hash)
 
-                        _id = str(uuid.uuid4())
 
-                        self.store_to_transactions_table(_id, tx)\
-                            .store_to_transactions_hash_table(_id, tx)\
-                            .store_to_address_table(_id, tx)\
-                            .store_to_bundle_hash_table(_id, tx)\
-                            .store_to_tag_table(_id, tx)\
-                            .store_to_branch_transaction_hash(_id, tx)\
-                            .store_to_trunk_transaction_hash(_id, tx)
+                        self.store_to_address_table(tx)
 
                         count += 1
                         print 'Dumped so far', count
