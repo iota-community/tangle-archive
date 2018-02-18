@@ -9,3 +9,4 @@ pyota==2.0.2
 pyOpenSSL==17.5.0
 flask-cqlalchemy
 requests
+smhasher
