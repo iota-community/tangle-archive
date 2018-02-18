@@ -1,5 +1,6 @@
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
+from cassandra.cqlengine.usertype import UserType
 
 KEYSPACE = 'permanode'
 
@@ -25,13 +26,16 @@ class Transaction(Model):
     min_weight_magnitude = columns.Integer(required=True)
     approvees = columns.Set(columns.Text, required=True)
 
+class TransactionHash(UserType):
+    hash = columns.Text()
+    date = columns.Date()
 
 class Bundle(Model):
     __table_name__ = 'bundles'
     __keyspace__ = KEYSPACE
 
     bundle = columns.Text(primary_key=True, required=True)
-    hashes = columns.Set(columns.Text)
+    hashes = columns.List(columns.UserDefinedType(TransactionHash))
 
 
 class Tag(Model):
@@ -39,7 +43,7 @@ class Tag(Model):
     __keyspace__ = KEYSPACE
 
     tag = columns.Text(primary_key=True, required=True)
-    hashes = columns.Set(columns.Text)
+    hashes = columns.List(columns.UserDefinedType(TransactionHash))
 
 
 class Address(Model):
@@ -47,7 +51,7 @@ class Address(Model):
     __keyspace__ = KEYSPACE
 
     address = columns.Text(primary_key=True, required=True)
-    hashes = columns.Set(columns.Text)
+    hashes = columns.List(columns.UserDefinedType(TransactionHash))
 
 
 class Approvee(Model):
@@ -55,4 +59,4 @@ class Approvee(Model):
     __keyspace__ = KEYSPACE
 
     hash = columns.Text(primary_key=True, required=True)
-    approvees = columns.Set(columns.Text)
+    approvees = columns.List(columns.UserDefinedType(TransactionHash))

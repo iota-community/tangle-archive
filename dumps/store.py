@@ -2,8 +2,8 @@ import datetime
 import os
 import transaction
 from schema import Transaction, Address, Tag,\
-    Bundle, Approvee
-from cassandra.cqlengine.management import sync_table
+    Bundle, Approvee, TransactionHash, KEYSPACE
+from cassandra.cqlengine.management import sync_table, sync_type
 from cassandra.cqlengine import connection
 from cassandra.cqlengine.query import LWTException
 
@@ -22,6 +22,8 @@ def sync_tables():
     sync_table(Bundle)
     sync_table(Approvee)
 
+def sync_types():
+    sync_type(KEYSPACE, TransactionHash)
 
 class Store:
     def __init__(self):
@@ -52,61 +54,101 @@ class Store:
 
         return self
 
-    def store_to_addresses_table(self, tx):
+    def store_to_addresses_table(self, tx, date):
         try:
-            Address.if_not_exists().create(
+            return Address.if_not_exists().create(
                 address=tx.address,
-                hashes=[tx.hash]
+                hashes=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                    )
+                ]
             )
-        except LWTException as e:
-            print 'Already has an address. Will update hashes'
-            Address.objects(address=tx.address).update(
-                hashes__add={tx.hash}
-            )
-
-        return self
-
-    def store_to_tags_table(self, tx):
+        except LWTException:
+            pass
         try:
-            Tag.if_not_exists().create(
+            return Address.objects(address=tx.address).update(
+                hashes__append=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                    )]
+            )
+        except LWTException:
+            raise Exception('Could not update address.')
+
+
+
+    def store_to_tags_table(self, tx, date):
+        try:
+            return Tag.if_not_exists().create(
                 tag=tx.tag,
-                hashes=[tx.hash]
+                hashes=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                    )
+                ]
             )
-        except LWTException as e:
-            print 'Already has a tag. Will update hashes'
-            Tag.objects(tag=tx.tag).update(
-                hashes__add={tx.hash}
-            )
-
-        return self
-
-    def store_to_bundles_table(self, tx):
+        except LWTException:
+            pass
         try:
-            Bundle.if_not_exists().create(
+            return Tag.objects(tag=tx.tag).update(
+                hashes__append=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                )]
+            )
+        except LWTException:
+            raise Exception('Could not update tag.')
+
+    def store_to_bundles_table(self, tx, date):
+        try:
+            return Bundle.if_not_exists().create(
                 bundle=tx.bundle_hash,
-                hashes=[tx.hash]
+                hashes=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                )]
             )
-        except LWTException as e:
-            print 'Already has a bundle. Will update hashes'
-            Bundle.objects(bundle=tx.bundle_hash).update(
-                hashes__add={tx.hash}
-            )
-
-        return self
-
-    def store_to_approvee_table(self, hash, hash_ref):
+        except LWTException:
+            pass
         try:
-            Approvee.if_not_exists().create(
-                hash=hash_ref,
-                approvees=[hash]
+            return Bundle.objects(bundle=tx.bundle_hash).update(
+                hashes__append=[
+                    TransactionHash(
+                        hash=tx.hash,
+                        date=date
+                )]
             )
-        except LWTException as e:
-            print 'Already has a ref. Will update hashes'
-            Approvee.objects(hash=hash_ref).update(
-                approvees__add={hash}
-            )
+        except LWTException:
+            raise Exception('Could not update bundle.')
 
-        return self
+    def store_to_approvee_table(self, hash, hash_ref, date):
+        try:
+            return Approvee.if_not_exists().create(
+                hash=hash_ref,
+                approvees=[
+                    TransactionHash(
+                        hash=hash,
+                        date=date
+                )]
+            )
+        except LWTException:
+            pass
+        try:
+            return Approvee.objects(hash=hash_ref).update(
+                approvees__append=[
+                    TransactionHash(
+                        hash=hash,
+                        date=date
+                )]
+            )
+        except LWTException:
+            raise Exception('Could not update approvee.')
 
     def extract_dump(self):
         for file in sorted(os.listdir(folder)):
@@ -125,12 +167,12 @@ class Store:
                                int(tx.timestamp)
                             ).strftime('%Y-%m-%d')
 
-                        self.store_to_transactions_table(tx, date)\
-                            .store_to_addresses_table(tx)\
-                            .store_to_bundles_table(tx)\
-                            .store_to_tags_table(tx)\
-                            .store_to_approvee_table(hash, branch)\
-                            .store_to_approvee_table(hash, trunk)
+                        self.store_to_transactions_table(tx, date)
+                        self.store_to_addresses_table(tx, date)
+                        self.store_to_bundles_table(tx, date)
+                        self.store_to_tags_table(tx, date)
+                        self.store_to_approvee_table(hash, branch, date)
+                        self.store_to_approvee_table(hash, trunk, date)
 
                         count += 1
                         print 'Dumped so far', count
@@ -139,4 +181,5 @@ class Store:
 if __name__ == '__main__':
     create_connection()
     sync_tables()
+    sync_types()
     Store()
