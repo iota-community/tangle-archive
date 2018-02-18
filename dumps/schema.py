@@ -9,8 +9,8 @@ class Transaction(Model):
     __table_name__ = 'transactions'
     __keyspace__ = KEYSPACE
 
-    hash = columns.Text(primary_key=True, partition_key=True, required=True)
-    date = columns.Date(partition_key=True, required=True)
+    date = columns.Date(primary_key=True, partition_key=True, required=True)
+    hash = columns.Text(partition_key=True, required=True)
     address = columns.Text(required=True)
     value = columns.BigInt(required=True)
     transaction_time = columns.Integer(required=True)
