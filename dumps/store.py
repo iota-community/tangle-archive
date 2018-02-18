@@ -31,7 +31,7 @@ class Store:
 
     def store_to_transactions_table(self, tx, date):
         try:
-            Transaction.if_not_exists().create(
+            return Transaction.if_not_exists().create(
                 date=date,
                 address=tx.address,
                 value=tx.value,
@@ -51,8 +51,6 @@ class Store:
 
         except LWTException as e:
             print e
-
-        return self
 
     def store_to_addresses_table(self, tx, date):
         try:
