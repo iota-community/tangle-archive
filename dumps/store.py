@@ -1,15 +1,4 @@
-"""
-
-Usage:
-  store.py [-e <env>]
-
-Options:
-    -e  --env <env>
-      Name of environment that will be used.
-
-"""
-
-
+import datetime
 import os
 import uuid
 import transaction
@@ -24,36 +13,24 @@ from cassandra.cqlengine.query import LWTException
 folder = './'
 
 
-def is_development(env):
-    return env is 'development'
+def create_connection():
+    connection.setup(['127.0.0.1'], 'cqlengine', protocol_version=3)
 
-
-def create_connection(env):
-    if is_development(env):
-        connection.setup(['127.0.0.1'], 'cqlengine', protocol_version=3)
-    else:
-        connection.setup(
-           ['127.0.0.1'],
-           'cqlengine',
-           protocol_version=3,
-           ssl_options={
-                'ca_certs': '../certs/rootCa.crt'
-           }
-        )
 
 
 def sync_tables():
     sync_table(Transaction)
-    sync_table(Address)
+
 
 
 class Store:
     def __init__(self):
         self.extract_dump()
 
-    def store_to_transactions_table(self, tx):
+    def store_to_transactions_table(self, tx, date):
         try:
             Transaction.if_not_exists().create(
+                date=date,
                 address=tx.address,
                 value=tx.value,
                 transaction_time=tx.timestamp,
@@ -75,55 +52,6 @@ class Store:
 
         return self
 
-    def store_branch_hash(self, tx):
-        try:
-            Transaction.if_not_exists().create(
-                hash=tx.branch_transaction_hash
-            )
-
-        except LWTException as e:
-            print e
-
-        return self
-
-    def store_trunk_hash(self, tx):
-        try:
-            Transaction.if_not_exists().create(
-                hash=tx.trunk_transaction_hash
-            )
-
-        except LWTException as e:
-            print e
-
-        return self
-
-    def store_to_address_table(self, tx):
-        try:
-            Address.objects(address=tx.address).update(
-                hashes__add={tx.hash}
-            )
-
-        except LWTException as e:
-            print e
-
-        return self
-
-    def update_transaction_with_this_branch(self, tx):
-        try:
-            transaction_obj = Transaction.objects(tx.branch).filter(
-                hash=tx.branch_transaction_hash
-            )
-
-            if transaction_obj:
-                Transaction.objects(hash=tx.branch_transaction_hash).update(
-                    approvees__add={tx.hash}
-                )
-
-        except LWTException as e:
-            print e
-
-        return self
-
     def extract_dump(self):
         for file in sorted(os.listdir(folder)):
             if file.endswith('.dmp'):
@@ -133,25 +61,17 @@ class Store:
                         tx_hash, tx = line.split(',')
                         tx = transaction.transaction(tx, tx_hash)
 
+                        date = datetime.datetime.fromtimestamp(
+                               int(tx.timestamp)
+                            ).strftime('%Y-%m-%d')
 
-                        self.store_to_address_table(tx)
+                        self.store_to_transactions_table(tx, date)
 
                         count += 1
                         print 'Dumped so far', count
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    allowed_envs = ['development', 'production']
-
-    current_env = None
-    specified_env = arguments['<env>']
-
-    if specified_env not in allowed_envs:
-        current_env = 'development'
-    else:
-        current_env = specified_env
-
-    create_connection(current_env)
+    create_connection()
     sync_tables()
     Store()

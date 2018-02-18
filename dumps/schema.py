@@ -8,21 +8,22 @@ class Transaction(Model):
     __table_name__ = 'transactions'
     __keyspace__ = KEYSPACE
 
-    hash = columns.Text(primary_key=True)
-    address = columns.Text()
-    value = columns.BigInt()
-    transaction_time = columns.Integer()
+    hash = columns.Text(primary_key=True, partition_key=True, required=True)
+    date = columns.Date(partition_key=True, required=True)
+    address = columns.Text(required=True)
+    value = columns.BigInt(required=True)
+    transaction_time = columns.Integer(required=True)
     signature_message_fragment = columns.Text()
-    tag = columns.Text()
-    tag_index = columns.BigInt()
-    current_index = columns.Integer()
-    last_index = columns.Integer()
-    bundle = columns.Text()
-    trunk_transaction_hash = columns.Text()
-    branch_transaction_hash = columns.Text()
-    nonce = columns.Text()
-    min_weight_magnitude = columns.Integer()
-    approvees = columns.Set(columns.Text)
+    tag = columns.Text(required=True)
+    tag_index = columns.BigInt(required=True)
+    current_index = columns.Integer(required=True)
+    last_index = columns.Integer(required=True)
+    bundle = columns.Text(required=True)
+    trunk_transaction_hash = columns.Text(required=True)
+    branch_transaction_hash = columns.Text(required=True)
+    nonce = columns.Text(required=True)
+    min_weight_magnitude = columns.Integer(required=True)
+    approvees = columns.Set(columns.Text, required=True)
 
 
 class Bundle(Model):
