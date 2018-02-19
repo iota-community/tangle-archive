@@ -9,8 +9,8 @@ class Transaction(Model):
     __table_name__ = 'transactions'
     __keyspace__ = KEYSPACE
 
-    bucket = columns.Date(primary_key=True, partition_key=True, required=True)
-    hash = columns.Text(partition_key=True, required=True)
+    bucket = columns.Text(primary_key=True, partition_key=True, required=True)
+    hash = columns.Text(primary_key=True, required=True)
     address = columns.Text(required=True)
     value = columns.BigInt(required=True)
     transaction_time = columns.Integer(required=True)
@@ -24,18 +24,17 @@ class Transaction(Model):
     branch_transaction_hash = columns.Text(required=True)
     nonce = columns.Text(required=True)
     min_weight_magnitude = columns.Integer(required=True)
-    approvees = columns.Set(columns.Text, required=True)
 
 class TransactionObject(UserType):
     hash = columns.Text()
-    date = columns.Date()
+    bucket = columns.Text()
 
 class Bundle(Model):
     __table_name__ = 'bundles'
     __keyspace__ = KEYSPACE
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
-    bundle = columns.Text(partition_key=True, required=True)
+    bundle = columns.Text(primary_key=True, required=True)
     hashes = columns.List(columns.UserDefinedType(TransactionObject))
 
 
@@ -44,7 +43,7 @@ class Tag(Model):
     __keyspace__ = KEYSPACE
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
-    tag = columns.Text(partition_key=True, required=True)
+    tag = columns.Text(primary_key=True, required=True)
     hashes = columns.List(columns.UserDefinedType(TransactionObject))
 
 class TransactionHash(Model):
@@ -52,15 +51,15 @@ class TransactionHash(Model):
     __keyspace__ = KEYSPACE
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
-    hash = columns.Text(partition_key=True, required=True)
-    date = columns.Date(required=True)
+    hash = columns.Text(primary_key=True, required=True)
+    date = columns.Text(required=True)
 
 class Address(Model):
     __table_name__ = 'addresses'
     __keyspace__ = KEYSPACE
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
-    address = columns.Text(partition_key=True, required=True)
+    address = columns.Text(primary_key=True, required=True)
     hashes = columns.List(columns.UserDefinedType(TransactionObject))
 
 
@@ -69,5 +68,5 @@ class Approvee(Model):
     __keyspace__ = KEYSPACE
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
-    hash = columns.Text(partition_key=True, required=True)
+    hash = columns.Text(primary_key=True, required=True)
     approvees = columns.List(columns.UserDefinedType(TransactionObject))

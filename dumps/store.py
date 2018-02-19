@@ -61,7 +61,7 @@ class Store:
                 hashes=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                     )
                 ]
             )
@@ -72,7 +72,7 @@ class Store:
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                     )]
             )
         except LWTException:
@@ -86,7 +86,7 @@ class Store:
                 hashes=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                     )
                 ]
             )
@@ -97,7 +97,7 @@ class Store:
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                 )]
             )
         except LWTException:
@@ -111,7 +111,7 @@ class Store:
                 hashes=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                 )]
             )
         except LWTException:
@@ -121,7 +121,7 @@ class Store:
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
-                        date=date
+                        bucket=date
                 )]
             )
         except LWTException:
@@ -145,7 +145,7 @@ class Store:
                 approvees=[
                     TransactionObject(
                         hash=hash,
-                        date=date
+                        bucket=date
                 )]
             )
         except LWTException:
@@ -155,7 +155,7 @@ class Store:
                 approvees__append=[
                     TransactionObject(
                         hash=hash,
-                        date=date
+                        bucket=date
                 )]
             )
         except LWTException:
@@ -175,8 +175,8 @@ class Store:
                         trunk = tx.trunk_transaction_hash
 
                         date = datetime.datetime.fromtimestamp(
-                               int(tx.timestamp)
-                            ).strftime('%Y-%m-%d')
+                               tx.timestamp
+                            ).strftime('%Y-%m-%d-%H')
 
                         self.store_to_transactions_table(tx, date)
                         self.store_to_addresses_table(tx, date)
