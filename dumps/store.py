@@ -56,7 +56,7 @@ class Store:
     def store_to_addresses_table(self, tx, date):
         try:
             return Address.if_not_exists().create(
-                bucket=tx.address[:10],
+                bucket=tx.address[:5],
                 address=tx.address,
                 hashes=[
                     TransactionObject(
@@ -68,7 +68,7 @@ class Store:
         except LWTException:
             pass
         try:
-            return Address.objects(bucket=tx.address[:10], address=tx.address).update(
+            return Address.objects(bucket=tx.address[:5], address=tx.address).update(
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
@@ -81,7 +81,7 @@ class Store:
     def store_to_tags_table(self, tx, date):
         try:
             return Tag.if_not_exists().create(
-                bucket=tx.tag[:10],
+                bucket=tx.tag[:5],
                 tag=tx.tag,
                 hashes=[
                     TransactionObject(
@@ -93,7 +93,7 @@ class Store:
         except LWTException:
             pass
         try:
-            return Tag.objects(bucket=tx.tag[:10], tag=tx.tag).update(
+            return Tag.objects(bucket=tx.tag[:5], tag=tx.tag).update(
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
@@ -106,7 +106,7 @@ class Store:
     def store_to_bundles_table(self, tx, date):
         try:
             return Bundle.if_not_exists().create(
-                bucket=tx.bundle_hash[:10],
+                bucket=tx.bundle_hash[:5],
                 bundle=tx.bundle_hash,
                 hashes=[
                     TransactionObject(
@@ -117,7 +117,7 @@ class Store:
         except LWTException:
             pass
         try:
-            return Bundle.objects(bucket=tx.bundle_hash[:10], bundle=tx.bundle_hash).update(
+            return Bundle.objects(bucket=tx.bundle_hash[:5], bundle=tx.bundle_hash).update(
                 hashes__append=[
                     TransactionObject(
                         hash=tx.hash,
@@ -130,7 +130,7 @@ class Store:
     def store_to_transaction_hashes_table(self, tx, date):
         try:
             return TransactionHash.if_not_exists().create(
-                bucket=tx.hash[:10],
+                bucket=tx.hash[:5],
                 hash=tx.hash,
                 date=date
             )
@@ -140,7 +140,7 @@ class Store:
     def store_to_approvee_table(self, hash, hash_ref, date):
         try:
             return Approvee.if_not_exists().create(
-                bucket=hash_ref[:10],
+                bucket=hash_ref[:5],
                 hash=hash_ref,
                 approvees=[
                     TransactionObject(
@@ -151,7 +151,7 @@ class Store:
         except LWTException:
             pass
         try:
-            return Approvee.objects(bucket=hash_ref[:10], hash=hash_ref).update(
+            return Approvee.objects(bucket=hash_ref[:5], hash=hash_ref).update(
                 approvees__append=[
                     TransactionObject(
                         hash=hash,
