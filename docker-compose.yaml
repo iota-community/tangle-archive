@@ -9,7 +9,7 @@ services:
       volumes:
         - .:/permanode
     cassandra:
-      image: cassandra:2.2.8
+      image: cassandra:latest
       hostname: cassandra
       ports:
         - 9042:9042
