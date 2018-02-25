@@ -47,6 +47,14 @@ class Transaction(Base):
         return transactions
 
     @classmethod
+    def get(cls, bucket, hash):
+        try:
+            transaction = Transaction.objects.get(bucket=bucket, hash=hash)
+            return transaction.as_json()
+        except DoesNotExist:
+            return None
+
+    @classmethod
     def from_address(cls, address):
         address_meta = Address.get(address)
 
@@ -56,6 +64,27 @@ class Transaction(Base):
         return Transaction.filter(
             buckets=[transaction['bucket'] for transaction in address_meta['transactions']],
             hashes=[transaction['hash'] for transaction in address_meta['transactions']]
+        )
+
+    @classmethod
+    def from_transaction_hash(cls, hash):
+        transaction_meta = TransactionHash.get(hash)
+
+        if not transaction_meta:
+            return None
+
+        return Transaction.get(transaction_meta['bucket'], transaction_meta['hash'])
+
+    @classmethod
+    def from_bundle_hash(cls, bundle):
+        bundle_meta = Bundle.get(bundle)
+
+        if not bundle:
+            return list()
+
+        return Transaction.filter(
+            buckets=[transaction['bucket'] for transaction in bundle_meta['transactions']],
+            hashes=[transaction['hash'] for transaction in bundle_meta['transactions']]
         )
 
     def as_json(self):
@@ -84,6 +113,20 @@ class Bundle(Base):
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     bundle = columns.Text(primary_key=True, required=True)
     transactions = columns.List(columns.UserDefinedType(TransactionObject))
+
+    @classmethod
+    def get(cls, bundle):
+        try:
+            bundle = Bundle.objects.get(bucket=bundle[:5], bundle=bundle)
+            return bundle.as_json()
+        except DoesNotExist:
+            return None
+
+    def as_json(self):
+        return {
+            'bundle': self.bundle,
+            'transactions': self.transactions
+        }
 
 
 class Tag(Base):
@@ -124,6 +167,20 @@ class TransactionHash(Base):
     hash = columns.Text(primary_key=True, required=True)
     date = columns.Text(required=True)
 
+    @classmethod
+    def get(cls, hash):
+        try:
+            transaction = TransactionHash.objects.get(bucket=hash[:5], hash=hash)
+            return transaction.as_json()
+        except DoesNotExist:
+            return None
+
+    def as_json(self):
+        return {
+            'hash': self.hash,
+            'bucket': self.date
+        }
+
 
 class Address(Base):
     __table_name__ = 'addresses'
@@ -135,7 +192,7 @@ class Address(Base):
     @classmethod
     def get(cls, address):
         try:
-            tag = Address.objects.get(bucket=address[:5], address=address)
+            address = Address.objects.get(bucket=address[:5], address=address)
             return address.as_json()
         except DoesNotExist:
             return None
@@ -145,6 +202,7 @@ class Address(Base):
             'address': self.address,
             'transactions': self.transactions
         }
+
 
 class Approvee(Base):
     __table_name__ = 'approvees'

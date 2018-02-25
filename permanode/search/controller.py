@@ -7,31 +7,11 @@ from permanode.models import Address,\
     TransactionHash, TransactionObject
 from permanode.shared.iota_api import IotaApi
 from permanode.shared.utils import *
-from permanode.search.constants import *
-
-
-class Node:
-    def __init__(self):
-        self.api = IotaApi()
-
-    def transaction_hashes_for_tag(self, tag):
-        hashes_for_tags, hashes_for_tags_status_code = self.api.find_transactions(tags=[tag])
-
-        if has_network_error(hashes_for_tags_status_code):
-            return None
-        elif has_no_network_error(hashes_for_tags_status_code):
-            if not hashes_for_tags:
-                return list()
-
-            return hashes_for_tags
-
-    def transactions_for_address(self, address):
-        return self.api.find_transactions_objects(addresses=[address])
 
 
 class Search:
     def __init__(self):
-        self.node = Node()
+        self.api = IotaApi()
 
     def transactions_for_address(self, address):
         address_without_checksum = address[:-9] if len(
@@ -39,29 +19,59 @@ class Search:
         ) == 90 else address
 
         old_transactions = TransactionModel.from_address(address_without_checksum)
-        recent_transactions = self.node.transactions_for_address(address_without_checksum)
+        recent_transactions = self.api.find_transactions_objects(addresses=[address_without_checksum])
+        balance = self.api.find_balance([address_without_checksum])
 
         return {
             'type': 'address',
             'payload': {
-                'balance': 0,
+                'balance': balance,
                 'transactions': old_transactions + recent_transactions  # noqa: E501
             }
         }
 
     def transactions_hashes_for_tag(self, tag):
-        if is_tag(tag):
-            tag_with_nines = with_nines(
-                tag, 27 - len(tag)
-            )
+        tag_with_nines = with_nines(
+            tag, 27 - len(tag)
+        )
 
-            old_transaction_hashes = Tag.get_transaction_hashes(tag_with_nines)
-            recent_transactions_hashes = self.node.transaction_hashes_for_tag(tag_with_nines)
+        old_transaction_hashes = Tag.get_transaction_hashes(tag_with_nines)
+        recent_transactions_hashes, status_code = self.api.find_transactions(tags=[tag])
 
+        if has_network_error(status_code):
+            return None
+
+        return {
+            'type': 'tag',
+            'payload': recent_transactions_hashes + old_transaction_hashes
+        }
+
+    def transactions_for_bundle_hash(self, bundle):
+        old_transactions = TransactionModel.from_bundle_hash(bundle)
+        recent_transactions = self.api.find_transactions_objects(bundles=[bundle])
+
+        if recent_transactions is None:
+            return None
+
+        all_transactions_from_bundle = old_transactions + recent_transactions
+
+        return all_transactions_from_bundle if all_transactions_from_bundle else None
+
+    def transaction_object(self, hash):
+        old_transaction = TransactionModel.from_transaction_hash(hash)
+
+        if old_transaction:
             return {
-                'type': 'tag',
-                'payload': recent_transactions_hashes + old_transaction_hashes
+                'type': 'transaction',
+                'payload': old_transaction
             }
+
+        recent_transaction = self.api.get_transactions_objects([hash])
+
+        return {
+            'type': 'transaction',
+            'payload': recent_transaction
+        } if recent_transaction else None
 
     def execute(self, value):
         if is_tag(value):
@@ -71,7 +81,15 @@ class Search:
             return self.transactions_for_address(value)
 
         if is_transaction(value):
-            pass
+            return self.transaction_object(value)
 
         if is_bundle_or_address(value):
-            pass
+            transactions_from_bundle = self.transactions_for_bundle_hash(value)
+
+            if transactions_from_bundle:
+                return {
+                    'type': 'bundle',
+                    'payload': transactions_from_bundle
+                }
+
+            return self.transactions_for_address(value)

@@ -44,3 +44,26 @@ def fetch_transaction_hashes_for_tag(tag):
         abort(404)
 
     return jsonify(payload)
+
+
+@search.route('/bundle/<bundle>', methods=['GET'])
+def fetch_transaction_hashes_for_bundle(bundle):
+    if not bundle or not is_valid_tag(bundle):
+        abort(400)
+
+    payload = Search().transactions_hashes_for_tag(bundle)
+
+    if payload is None:
+        abort(404)
+
+    return jsonify(payload)
+
+
+@search.route('/transaction/<hash>', methods=['GET'])
+def fetch_transaction(hash):
+    payload = Search().transaction_object(hash)
+
+    if payload is None:
+        abort(404)
+
+    return jsonify(payload)

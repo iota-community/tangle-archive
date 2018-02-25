@@ -110,3 +110,16 @@ class IotaApi:
             return None
 
         return self.get_transactions_objects(transaction_hashes) if transaction_hashes else list()
+
+    def find_balance(self, addresses):
+        balances, balances_status_code = self.get_balances(addresses)
+
+        if has_network_error(balances_status_code):
+            return None
+
+        total_balance = 0
+
+        for balance in balances:
+            total_balance += balance
+
+        return total_balance
