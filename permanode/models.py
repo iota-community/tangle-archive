@@ -46,6 +46,18 @@ class Transaction(Base):
 
         return transactions
 
+    @classmethod
+    def from_address(cls, address):
+        address_meta = Address.get(address)
+
+        if not address_meta:
+            return list()
+
+        return Transaction.filter(
+            buckets=[transaction['bucket'] for transaction in address_meta['transactions']],
+            hashes=[transaction['hash'] for transaction in address_meta['transactions']]
+        )
+
     def as_json(self):
         return {
             "hash": self.hash,
@@ -104,12 +116,14 @@ class Tag(Base):
             'transactions': self.transactions
         }
 
+
 class TransactionHash(Base):
     __table_name__ = 'transaction_hashes'
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     hash = columns.Text(primary_key=True, required=True)
     date = columns.Text(required=True)
+
 
 class Address(Base):
     __table_name__ = 'addresses'
@@ -118,6 +132,19 @@ class Address(Base):
     address = columns.Text(primary_key=True, required=True)
     transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
+    @classmethod
+    def get(cls, address):
+        try:
+            tag = Address.objects.get(bucket=address[:5], address=address)
+            return address.as_json()
+        except DoesNotExist:
+            return None
+
+    def as_json(self):
+        return {
+            'address': self.address,
+            'transactions': self.transactions
+        }
 
 class Approvee(Base):
     __table_name__ = 'approvees'

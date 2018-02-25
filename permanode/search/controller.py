@@ -14,7 +14,7 @@ class Node:
     def __init__(self):
         self.api = IotaApi()
 
-    def transactions_for_tag(self, tag):
+    def transaction_hashes_for_tag(self, tag):
         hashes_for_tags, hashes_for_tags_status_code = self.api.find_transactions(tags=[tag])
 
         if has_network_error(hashes_for_tags_status_code):
@@ -25,42 +25,53 @@ class Node:
 
             return hashes_for_tags
 
-
-class History:
-    def transactions_for_hash(self, value):
-        pass
-
-    def transactions_for_bundle_or_address(self, value):
-        pass
-
-    def transactions_for_address(self, value):
-        pass
+    def transactions_for_address(self, address):
+        return self.api.find_transactions_objects(addresses=[address])
 
 
 class Search:
     def __init__(self):
-        self.history = History()
         self.node = Node()
 
-    def execute(self, value):
-        if is_tag(value):
+    def transactions_for_address(self, address):
+        address_without_checksum = address[:-9] if len(
+            address
+        ) == 90 else address
+
+        old_transactions = TransactionModel.from_address(address_without_checksum)
+        recent_transactions = self.node.transactions_for_address(address_without_checksum)
+
+        return {
+            'type': 'address',
+            'payload': {
+                'balance': 0,
+                'transactions': old_transactions + recent_transactions  # noqa: E501
+            }
+        }
+
+    def transactions_hashes_for_tag(self, tag):
+        if is_tag(tag):
             tag_with_nines = with_nines(
-                value, 27 - len(value)
+                tag, 27 - len(tag)
             )
 
             old_transaction_hashes = Tag.get_transaction_hashes(tag_with_nines)
-            recent_transactions_hashes = self.node.transactions_for_tag(tag_with_nines)
+            recent_transactions_hashes = self.node.transaction_hashes_for_tag(tag_with_nines)
 
             return {
                 'type': 'tag',
                 'payload': recent_transactions_hashes + old_transaction_hashes
             }
 
+    def execute(self, value):
+        if is_tag(value):
+            return self.transactions_hashes_for_tag(value)
+
         if is_address(value):
-            self.history.transactions_for_address(value)
+            return self.transactions_for_address(value)
 
         if is_transaction(value):
-            self.history.transactions_for_hash(value)
+            pass
 
         if is_bundle_or_address(value):
-            self.history.transactions_for_bundle_or_address(value)
+            pass

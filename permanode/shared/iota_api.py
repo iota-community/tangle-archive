@@ -1,9 +1,12 @@
 from __future__ import print_function
 import sys
+
+from iota import Transaction, TryteString
 from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
 from api_commands import *
+from permanode.shared.utils import transform_with_persistence, has_network_error
 
 
 class IotaApi:
@@ -77,3 +80,33 @@ class IotaApi:
         command = get_balances(addresses, threshold)
 
         return self.__make_request(command)
+
+    def get_transactions_objects(self, hashes):
+        transactions = []
+
+        trytes, trytes_status_code = self.get_trytes(hashes)
+
+        if has_network_error(trytes_status_code):
+            return None
+
+        for tryte in trytes:
+            transaction = Transaction.from_tryte_string(tryte)
+
+            transactions.append(transaction.as_json_compatible())
+
+        hashes = [tx['hash_'] for tx in transactions]
+
+        inclusion_states, inclusion_states_status_code = self.get_latest_inclusions(hashes)
+
+        if has_network_error(inclusion_states_status_code):
+            return None
+
+        return transform_with_persistence(transactions, inclusion_states)
+
+    def find_transactions_objects(self, **kwargs):
+        transaction_hashes, transaction_hashes_status_code = self.find_transactions(**kwargs)
+
+        if has_network_error(transaction_hashes_status_code):
+            return None
+
+        return self.get_transactions_objects(transaction_hashes) if transaction_hashes else list()

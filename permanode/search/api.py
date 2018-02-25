@@ -25,7 +25,7 @@ def fetch_transactions_for_address(address):
     if not address or not is_valid_address(address):
         abort(400)
 
-    payload = Search().execute(address)
+    payload = Search().transactions_for_address(address)
 
     if payload is None:
         abort(404)
@@ -35,11 +35,10 @@ def fetch_transactions_for_address(address):
 
 @search.route('/tag/<tag>', methods=['GET'])
 def fetch_transaction_hashes_for_tag(tag):
-    print(tag, file=sys.stderr)
     if not tag or not is_valid_tag(tag):
         abort(400)
 
-    payload = Search().execute(tag)
+    payload = Search().transactions_hashes_for_tag(tag)
 
     if payload is None:
         abort(404)
