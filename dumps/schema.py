@@ -35,7 +35,7 @@ class Bundle(Model):
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     bundle = columns.Text(primary_key=True, required=True)
-    hashes = columns.List(columns.UserDefinedType(TransactionObject))
+    transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
 
 class Tag(Model):
@@ -44,7 +44,7 @@ class Tag(Model):
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     tag = columns.Text(primary_key=True, required=True)
-    hashes = columns.List(columns.UserDefinedType(TransactionObject))
+    transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
 class TransactionHash(Model):
     __table_name__ = 'transaction_hashes'
@@ -60,7 +60,7 @@ class Address(Model):
 
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     address = columns.Text(primary_key=True, required=True)
-    hashes = columns.List(columns.UserDefinedType(TransactionObject))
+    transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
 
 class Approvee(Model):

@@ -58,7 +58,7 @@ class Store:
             return Address.if_not_exists().create(
                 bucket=tx.address[:5],
                 address=tx.address,
-                hashes=[
+                transactions=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date
@@ -69,7 +69,7 @@ class Store:
             pass
         try:
             return Address.objects(bucket=tx.address[:5], address=tx.address).update(
-                hashes__append=[
+                transactions__append=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date
@@ -83,7 +83,7 @@ class Store:
             return Tag.if_not_exists().create(
                 bucket=tx.tag[:5],
                 tag=tx.tag,
-                hashes=[
+                transactions=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date
@@ -94,7 +94,7 @@ class Store:
             pass
         try:
             return Tag.objects(bucket=tx.tag[:5], tag=tx.tag).update(
-                hashes__append=[
+                transactions__append=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date
@@ -108,7 +108,7 @@ class Store:
             return Bundle.if_not_exists().create(
                 bucket=tx.bundle_hash[:5],
                 bundle=tx.bundle_hash,
-                hashes=[
+                transactions=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date
@@ -118,7 +118,7 @@ class Store:
             pass
         try:
             return Bundle.objects(bucket=tx.bundle_hash[:5], bundle=tx.bundle_hash).update(
-                hashes__append=[
+                transactions__append=[
                     TransactionObject(
                         hash=tx.hash,
                         bucket=date

@@ -1,3 +1,5 @@
+from __future__ import print_function
+import sys
 from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
@@ -14,6 +16,19 @@ class IotaApi:
         self.method = 'GET'
         self.url = 'http://iota-tangle.io:14265'
 
+        self.response_map = {
+            'findTransactions': 'hashes',
+            'getTrytes': 'trytes',
+            'getInclusionStates': 'states',
+            'getBalances': 'balances'
+        }
+
+    def __prepare_response(self, command, response):
+        if command in self.response_map:
+            return response[self.response_map[command]]
+
+        return response
+
     def __make_request(self, command):
         res = HttpRequest(
                 self.method,
@@ -22,10 +37,10 @@ class IotaApi:
                 data=json.dumps(command, cls=JsonEncoder),
             )
 
-        if res is None:
+        if res.response is None:
             return None, 503
 
-        return res.response, res.status_code
+        return self.__prepare_response(command['command'], res.response), res.status_code
 
     def get_node_info(self):
         command = get_node_info()
