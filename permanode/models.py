@@ -3,6 +3,7 @@ import sys
 
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.usertype import UserType
+from cassandra.cqlengine.query import DoesNotExist
 from permanode import db
 
 KEYSPACE = 'permanode'
@@ -35,18 +36,6 @@ class Transaction(Base):
     branch_transaction_hash = columns.Text(required=True)
     nonce = columns.Text(required=True)
     min_weight_magnitude = columns.Integer(required=True)
-
-    @classmethod
-    def from_tag(cls, tag):
-        tag_meta = Tag.get(tag)
-
-        if not tag_meta:
-            return list()
-
-        return Transaction.filter(
-            buckets=[transaction['bucket'] for transaction in tag_meta['transactions']],
-            hashes=[transaction['hash'] for transaction in tag_meta['transactions']]
-        )
 
     @classmethod
     def filter(cls, buckets=list(), hashes=list()):
@@ -93,10 +82,21 @@ class Tag(Base):
     transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
     @classmethod
-    def get(cls, tag):
-        tag = Tag.objects.get(bucket=tag[:5], tag=tag)
+    def get_transaction_hashes(cls, tag):
+        tag_meta = Tag.get(tag)
 
-        return tag.as_json()
+        if not tag_meta:
+            return list()
+
+        return [transaction['hash'] for transaction in tag_meta['transactions']]
+
+    @classmethod
+    def get(cls, tag):
+        try:
+            tag = Tag.objects.get(bucket=tag[:5], tag=tag)
+            return tag.as_json()
+        except DoesNotExist:
+            return None
 
     def as_json(self):
         return {

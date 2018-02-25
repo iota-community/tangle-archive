@@ -14,7 +14,7 @@ class IotaApi:
         }
 
         self.method = 'GET'
-        self.url = 'http://iota-tangle.io:14265'
+        self.url = 'http://node.iota.bar:14265'
 
         self.response_map = {
             'findTransactions': 'hashes',
@@ -52,7 +52,7 @@ class IotaApi:
             **kwargs
     ):
 
-        command = find_transactions(kwargs)
+        command = find_transactions(**kwargs)
 
         return self.__make_request(command)
 

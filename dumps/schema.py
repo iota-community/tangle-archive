@@ -25,9 +25,11 @@ class Transaction(Model):
     nonce = columns.Text(required=True)
     min_weight_magnitude = columns.Integer(required=True)
 
+
 class TransactionObject(UserType):
     hash = columns.Text()
     bucket = columns.Text()
+
 
 class Bundle(Model):
     __table_name__ = 'bundles'
@@ -46,6 +48,7 @@ class Tag(Model):
     tag = columns.Text(primary_key=True, required=True)
     transactions = columns.List(columns.UserDefinedType(TransactionObject))
 
+
 class TransactionHash(Model):
     __table_name__ = 'transaction_hashes'
     __keyspace__ = KEYSPACE
@@ -53,6 +56,7 @@ class TransactionHash(Model):
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     hash = columns.Text(primary_key=True, required=True)
     date = columns.Text(required=True)
+
 
 class Address(Model):
     __table_name__ = 'addresses'

@@ -9,54 +9,33 @@ from permanode.shared.iota_api import IotaApi
 from permanode.shared.utils import *
 from permanode.search.constants import *
 
+
 class Node:
     def __init__(self):
         self.api = IotaApi()
 
     def transactions_for_tag(self, tag):
-        transactions = []
+        hashes_for_tags, hashes_for_tags_status_code = self.api.find_transactions(tags=[tag])
 
-        tags, tags_status_code = self.api.find_transactions(tags=[tag])
-
-        if has_network_error(tags_status_code):
+        if has_network_error(hashes_for_tags_status_code):
             return None
-        elif has_no_network_error(tags_status_code):
-            if not tags:
+        elif has_no_network_error(hashes_for_tags_status_code):
+            if not hashes_for_tags:
                 return list()
 
-            transaction_trytes, \
-            transaction_trytes_status_code = self.api.get_trytes(tags)
-
-            for tryte in transaction_trytes:
-                transaction = Transaction.from_tryte_string(tryte)
-
-                transactions.append(transaction.as_json_compatible())
-
-            hashes = [transaction['hash_'] for transaction in transactions]
-
-            inclusion_states, \
-            inclusion_states_status_code = self.api.get_latest_inclusions(hashes)
-
-            if has_network_error(inclusion_states_status_code):
-                return None
-
-            return transform_with_persistence(transactions, inclusion_states)
+            return hashes_for_tags
 
 
 class History:
     def transactions_for_hash(self, value):
         pass
 
-    def transactions_for_tag(self, value):
-        transactions = TransactionModel.from_tag(value)
-
-        return transactions
-
     def transactions_for_bundle_or_address(self, value):
         pass
 
     def transactions_for_address(self, value):
         pass
+
 
 class Search:
     def __init__(self):
@@ -69,11 +48,12 @@ class Search:
                 value, 27 - len(value)
             )
 
-            old_transactions = self.history.transactions_for_tag(tag_with_nines)
+            old_transaction_hashes = Tag.get_transaction_hashes(tag_with_nines)
+            recent_transactions_hashes = self.node.transactions_for_tag(tag_with_nines)
 
             return {
                 'type': 'tag',
-                'payload': old_transactions
+                'payload': recent_transactions_hashes + old_transaction_hashes
             }
 
         if is_address(value):
