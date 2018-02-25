@@ -6,7 +6,8 @@ from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
 from api_commands import *
-from permanode.shared.utils import transform_with_persistence, has_network_error
+from permanode.shared.utils import transform_with_persistence, has_network_error,\
+    has_all_digits
 
 
 class IotaApi:
@@ -89,6 +90,9 @@ class IotaApi:
         if has_network_error(trytes_status_code):
             return None
 
+        if has_all_digits(trytes):
+            return list()
+
         for tryte in trytes:
             transaction = Transaction.from_tryte_string(tryte)
 
@@ -123,3 +127,11 @@ class IotaApi:
             total_balance += balance
 
         return total_balance
+
+    def find_approvees(self, hashes):
+        approvees, approvees_status_code = self.find_transactions(approvees=hashes)
+
+        if has_network_error(approvees_status_code):
+            return None
+
+        return approvees

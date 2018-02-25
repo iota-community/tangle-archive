@@ -8,7 +8,7 @@ from permanode.search.controller import Search
 
 
 @search.route('/<search_string>', methods=['GET'])
-def fetch_transactions(search_string):
+def fetch_transactions_meta_for(search_string):
     if not search_string or len(search_string) > 90:
         abort(400)
 
@@ -48,10 +48,7 @@ def fetch_transaction_hashes_for_tag(tag):
 
 @search.route('/bundle/<bundle>', methods=['GET'])
 def fetch_transaction_hashes_for_bundle(bundle):
-    if not bundle or not is_valid_tag(bundle):
-        abort(400)
-
-    payload = Search().transactions_hashes_for_tag(bundle)
+    payload = Search().transactions_for_bundle_hash(bundle)
 
     if payload is None:
         abort(404)
@@ -60,8 +57,8 @@ def fetch_transaction_hashes_for_bundle(bundle):
 
 
 @search.route('/transaction/<hash>', methods=['GET'])
-def fetch_transaction(hash):
-    payload = Search().transaction_object(hash)
+def fetch_transaction_meta(hash):
+    payload = Search().transaction_meta(hash)
 
     if payload is None:
         abort(404)

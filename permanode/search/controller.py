@@ -1,10 +1,7 @@
 from __future__ import print_function
 import sys
 
-from iota import Bundle, Transaction, TryteString
-from permanode.models import Address,\
-    Transaction as TransactionModel, Bundle, Tag,\
-    TransactionHash, TransactionObject
+from permanode.models import Transaction as TransactionModel, Tag, Approvee
 from permanode.shared.iota_api import IotaApi
 from permanode.shared.utils import *
 
@@ -55,23 +52,40 @@ class Search:
 
         all_transactions_from_bundle = old_transactions + recent_transactions
 
-        return all_transactions_from_bundle if all_transactions_from_bundle else None
+        return {
+            'type': 'bundle',
+            'payload': all_transactions_from_bundle
+        } if all_transactions_from_bundle else None
 
-    def transaction_object(self, hash):
+    def transaction_meta(self, hash):
         old_transaction = TransactionModel.from_transaction_hash(hash)
 
         if old_transaction:
             return {
                 'type': 'transaction',
-                'payload': old_transaction
+                'payload': {
+                    'transaction': old_transaction,
+                    'approvees': Approvee.get_approvees_hashes(hash)
+                }
             }
 
         recent_transaction = self.api.get_transactions_objects([hash])
 
+        if recent_transaction is None:
+            return None
+
+        approvees = self.api.find_approvees([hash])
+
+        if approvees is None:
+            return None
+
         return {
             'type': 'transaction',
-            'payload': recent_transaction
-        } if recent_transaction else None
+            'payload': {
+                'transaction': recent_transaction,
+                'approvees': approvees
+            }
+        }
 
     def execute(self, value):
         if is_tag(value):
@@ -81,15 +95,12 @@ class Search:
             return self.transactions_for_address(value)
 
         if is_transaction(value):
-            return self.transaction_object(value)
+            return self.transaction_meta(value)
 
         if is_bundle_or_address(value):
             transactions_from_bundle = self.transactions_for_bundle_hash(value)
 
-            if transactions_from_bundle:
-                return {
-                    'type': 'bundle',
-                    'payload': transactions_from_bundle
-                }
+            if transactions_from_bundle is not None:
+                return transactions_from_bundle
 
             return self.transactions_for_address(value)

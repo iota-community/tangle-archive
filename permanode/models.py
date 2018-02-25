@@ -1,6 +1,3 @@
-from __future__ import print_function
-import sys
-
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.usertype import UserType
 from cassandra.cqlengine.query import DoesNotExist
@@ -79,7 +76,7 @@ class Transaction(Base):
     def from_bundle_hash(cls, bundle):
         bundle_meta = Bundle.get(bundle)
 
-        if not bundle:
+        if not bundle_meta:
             return list()
 
         return Transaction.filter(
@@ -210,3 +207,26 @@ class Approvee(Base):
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     hash = columns.Text(primary_key=True, required=True)
     approvees = columns.List(columns.UserDefinedType(TransactionObject))
+
+    @classmethod
+    def get(cls, hash):
+        try:
+            approvee = Approvee.objects.get(bucket=hash[:5], hash=hash)
+            return approvee.as_json()
+        except DoesNotExist:
+            return None
+
+    def as_json(self):
+        return {
+            'hash': self.hash,
+            'transactions': self.transactions
+        }
+
+    @classmethod
+    def get_approvees_hashes(cls, hash):
+        approvee_meta = Approvee.get(hash)
+
+        if not approvee_meta:
+            return list()
+
+        return [transaction['hash'] for transaction in approvee_meta['approvees']]
