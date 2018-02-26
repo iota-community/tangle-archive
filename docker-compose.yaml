@@ -4,6 +4,8 @@ services:
       restart: always
       build: .
       entrypoint: /permanode/scripts/permanode_web.sh
+      environment:
+        - WITH_DUMPS=no
       ports:
         - "9080:9080"
       volumes:

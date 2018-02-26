@@ -1,30 +1,16 @@
+from __future__ import print_function
+import sys
+
 import datetime
 import os
 import transaction
-from schema import Transaction, Address, Tag,\
-    Bundle, Approvee, TransactionObject, TransactionHash, KEYSPACE
-from cassandra.cqlengine.management import sync_table, sync_type
-from cassandra.cqlengine import connection
+from permanode.models import Transaction, Address, Tag,\
+    Bundle, Approvee, TransactionObject, TransactionHash
 from cassandra.cqlengine.query import LWTException
 
 
-folder = './'
+folder = './dumps/'
 
-
-def create_connection():
-    connection.setup(['127.0.0.1'], 'cqlengine', protocol_version=3)
-
-
-def sync_tables():
-    sync_table(Transaction)
-    sync_table(Address)
-    sync_table(Tag)
-    sync_table(Bundle)
-    sync_table(TransactionHash)
-    sync_table(Approvee)
-
-def sync_types():
-    sync_type(KEYSPACE, TransactionObject)
 
 class Store:
     def __init__(self):
@@ -51,7 +37,7 @@ class Store:
             )
 
         except LWTException as e:
-            print e
+            print(e, file=sys.stdout)
 
     def store_to_addresses_table(self, tx, date):
         try:
@@ -135,7 +121,7 @@ class Store:
                 date=date
             )
         except LWTException:
-            print 'Transaction hash already dumped.'
+            print('Transaction hash already dumped', file=sys.stdout)
 
     def store_to_approvee_table(self, hash, hash_ref, date):
         try:
@@ -187,11 +173,5 @@ class Store:
                         self.store_to_approvee_table(hash, trunk, date)
 
                         count += 1
-                        print 'Dumped so far', count
+                        print('Dumped so far', count, file=sys.stdout)
 
-
-if __name__ == '__main__':
-    create_connection()
-    sync_tables()
-    sync_types()
-    Store()
