@@ -1,9 +1,7 @@
-from __future__ import print_function
-import sys
-
 from permanode.models import Transaction as TransactionModel, Tag, Approvee
 from permanode.shared.iota_api import IotaApi
 from permanode.shared.utils import *
+from permanode.shared.validator import *
 
 
 class Search:
@@ -17,6 +15,11 @@ class Search:
 
         old_transactions = TransactionModel.from_address(address_without_checksum)
         recent_transactions = self.api.find_transactions_objects(addresses=[address_without_checksum])
+
+        # In case there is a network error
+        if recent_transactions is None:
+            return None
+
         balance = self.api.find_balance([address_without_checksum])
 
         return {
@@ -90,17 +93,16 @@ class Search:
     def execute(self, value):
         if is_tag(value):
             return self.transactions_hashes_for_tag(value)
-
-        if is_address(value):
+        elif is_address_with_checksum(value):
             return self.transactions_for_address(value)
-
-        if is_transaction(value):
+        elif is_transaction_hash(value):
             return self.transaction_meta(value)
-
-        if is_bundle_or_address(value):
+        elif is_bundle_or_address_without_checksum(value):
             transactions_from_bundle = self.transactions_for_bundle_hash(value)
 
             if transactions_from_bundle is not None:
                 return transactions_from_bundle
 
             return self.transactions_for_address(value)
+
+        return None

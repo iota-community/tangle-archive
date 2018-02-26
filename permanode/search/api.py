@@ -1,8 +1,5 @@
-from __future__ import print_function
-import sys
-
 from flask import jsonify, abort
-from permanode.shared.validator import is_valid_address, is_valid_tag
+from permanode.shared.validator import *
 from permanode.search import search
 from permanode.search.controller import Search
 
@@ -22,7 +19,7 @@ def fetch_transactions_meta_for(search_string):
 
 @search.route('/address/<address>', methods=['GET'])
 def fetch_transactions_for_address(address):
-    if not address or not is_valid_address(address):
+    if not is_address_with_checksum(address) or not is_address_without_checksum(address):
         abort(400)
 
     payload = Search().transactions_for_address(address)
@@ -35,7 +32,7 @@ def fetch_transactions_for_address(address):
 
 @search.route('/tag/<tag>', methods=['GET'])
 def fetch_transaction_hashes_for_tag(tag):
-    if not tag or not is_valid_tag(tag):
+    if not is_tag(tag):
         abort(400)
 
     payload = Search().transactions_hashes_for_tag(tag)
@@ -48,6 +45,9 @@ def fetch_transaction_hashes_for_tag(tag):
 
 @search.route('/bundle/<bundle>', methods=['GET'])
 def fetch_transaction_hashes_for_bundle(bundle):
+    if not is_bundle_hash(bundle):
+        abort(400)
+
     payload = Search().transactions_for_bundle_hash(bundle)
 
     if payload is None:
@@ -58,6 +58,9 @@ def fetch_transaction_hashes_for_bundle(bundle):
 
 @search.route('/transaction/<hash>', methods=['GET'])
 def fetch_transaction_meta(hash):
+    if not is_transaction_hash(hash):
+        abort(400)
+
     payload = Search().transaction_meta(hash)
 
     if payload is None:

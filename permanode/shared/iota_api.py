@@ -124,7 +124,7 @@ class IotaApi:
         total_balance = 0
 
         for balance in balances:
-            total_balance += balance
+            total_balance += int(balance)
 
         return total_balance
 

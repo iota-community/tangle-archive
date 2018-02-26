@@ -63,19 +63,3 @@ def has_network_error(status_code):
 
 def has_no_network_error(status_code):
     return status_code == 200
-
-
-def is_tag(value):
-    return len(value) <= 27
-
-
-def is_address(value):
-    return len(value) == 90
-
-
-def is_transaction(value):
-    return len(value) == 81 and value.endswith('999')
-
-
-def is_bundle_or_address(value):
-    return len(value) == 81 and not value.endswith('999')
