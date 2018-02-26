@@ -8,7 +8,7 @@ class Search:
     def __init__(self):
         self.api = IotaApi()
 
-    def transactions_for_address(self, address):
+    def address_data(self, address):
         address_without_checksum = address[:-9] if len(
             address
         ) == 90 else address
@@ -30,7 +30,7 @@ class Search:
             }
         }
 
-    def transactions_hashes_for_tag(self, tag):
+    def tag_data(self, tag):
         tag_with_nines = with_nines(
             tag, 27 - len(tag)
         )
@@ -46,7 +46,7 @@ class Search:
             'payload': recent_transactions_hashes + old_transaction_hashes
         }
 
-    def transactions_for_bundle_hash(self, bundle):
+    def bundle_data(self, bundle):
         old_transactions = TransactionModel.from_bundle_hash(bundle)
         recent_transactions = self.api.find_transactions_objects(bundles=[bundle])
 
@@ -60,7 +60,7 @@ class Search:
             'payload': all_transactions_from_bundle
         } if all_transactions_from_bundle else None
 
-    def transaction_meta(self, hash):
+    def transaction_data(self, hash):
         old_transaction = TransactionModel.from_transaction_hash(hash)
 
         if old_transaction:
@@ -92,17 +92,17 @@ class Search:
 
     def execute(self, value):
         if is_tag(value):
-            return self.transactions_hashes_for_tag(value)
+            return self.tag_data(value)
         elif is_address_with_checksum(value):
-            return self.transactions_for_address(value)
+            return self.address_data(value)
         elif is_transaction_hash(value):
-            return self.transaction_meta(value)
+            return self.transaction_data(value)
         elif is_bundle_or_address_without_checksum(value):
-            transactions_from_bundle = self.transactions_for_bundle_hash(value)
+            transactions_from_bundle = self.bundle_data(value)
 
             if transactions_from_bundle is not None:
                 return transactions_from_bundle
 
-            return self.transactions_for_address(value)
+            return self.address_data(value)
 
         return None
