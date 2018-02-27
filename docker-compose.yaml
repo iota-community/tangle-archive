@@ -4,12 +4,14 @@ services:
       restart: always
       build: .
       entrypoint: /permanode/scripts/permanode_web.sh
+      environment:
+        - WITH_DUMPS=no
       ports:
         - "9080:9080"
       volumes:
         - .:/permanode
     cassandra:
-      image: cassandra:2.2.8
+      image: cassandra:latest
       hostname: cassandra
       ports:
         - 9042:9042

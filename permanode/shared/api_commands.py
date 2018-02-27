@@ -1,26 +1,12 @@
-
-
-def find_transactions(
-        addresses=None,
-        bundles=None,
-        tags=None,
-        approvees=None
-):
+def find_transactions(**kwargs):
     command = {
         'command': 'findTransactions'
     }
 
-    if addresses:
-        command['addresses'] = addresses
+    # TODO: Validate arguments
 
-    if bundles:
-        command['bundles'] = bundles
-
-    if tags:
-        command['tags'] = tags
-
-    if approvees:
-        command['approvees'] = approvees
+    for key, value in kwargs.iteritems():
+        command[key] = value
 
     return command
 

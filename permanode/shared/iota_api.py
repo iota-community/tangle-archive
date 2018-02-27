@@ -1,7 +1,13 @@
+from __future__ import print_function
+import sys
+
+from iota import Transaction, TryteString
 from http_request import HttpRequest
 import json
 from iota.json import JsonEncoder
 from api_commands import *
+from permanode.shared.utils import transform_with_persistence, has_network_error,\
+    has_all_digits
 
 
 class IotaApi:
@@ -12,7 +18,20 @@ class IotaApi:
         }
 
         self.method = 'GET'
-        self.url = 'http://iota-tangle.io:14265'
+        self.url = 'http://node.iota.bar:14265'
+
+        self.response_map = {
+            'findTransactions': 'hashes',
+            'getTrytes': 'trytes',
+            'getInclusionStates': 'states',
+            'getBalances': 'balances'
+        }
+
+    def __prepare_response(self, command, response):
+        if command in self.response_map:
+            return response[self.response_map[command]]
+
+        return response
 
     def __make_request(self, command):
         res = HttpRequest(
@@ -22,10 +41,10 @@ class IotaApi:
                 data=json.dumps(command, cls=JsonEncoder),
             )
 
-        if res is None:
+        if res.response is None:
             return None, 503
 
-        return res.response, res.status_code
+        return self.__prepare_response(command['command'], res.response), res.status_code
 
     def get_node_info(self):
         command = get_node_info()
@@ -37,7 +56,7 @@ class IotaApi:
             **kwargs
     ):
 
-        command = find_transactions(kwargs)
+        command = find_transactions(**kwargs)
 
         return self.__make_request(command)
 
@@ -62,3 +81,57 @@ class IotaApi:
         command = get_balances(addresses, threshold)
 
         return self.__make_request(command)
+
+    def get_transactions_objects(self, hashes):
+        transactions = []
+
+        trytes, trytes_status_code = self.get_trytes(hashes)
+
+        if has_network_error(trytes_status_code):
+            return None
+
+        if has_all_digits(trytes):
+            return list()
+
+        for tryte in trytes:
+            transaction = Transaction.from_tryte_string(tryte)
+
+            transactions.append(transaction.as_json_compatible())
+
+        hashes = [tx['hash_'] for tx in transactions]
+
+        inclusion_states, inclusion_states_status_code = self.get_latest_inclusions(hashes)
+
+        if has_network_error(inclusion_states_status_code):
+            return None
+
+        return transform_with_persistence(transactions, inclusion_states)
+
+    def find_transactions_objects(self, **kwargs):
+        transaction_hashes, transaction_hashes_status_code = self.find_transactions(**kwargs)
+
+        if has_network_error(transaction_hashes_status_code):
+            return None
+
+        return self.get_transactions_objects(transaction_hashes) if transaction_hashes else list()
+
+    def find_balance(self, addresses):
+        balances, balances_status_code = self.get_balances(addresses)
+
+        if has_network_error(balances_status_code):
+            return None
+
+        total_balance = 0
+
+        for balance in balances:
+            total_balance += int(balance)
+
+        return total_balance
+
+    def find_approvees(self, hashes):
+        approvees, approvees_status_code = self.find_transactions(approvees=hashes)
+
+        if has_network_error(approvees_status_code):
+            return None
+
+        return approvees
