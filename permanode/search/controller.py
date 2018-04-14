@@ -85,7 +85,7 @@ class Search:
         return {
             'type': 'transaction',
             'payload': {
-                'transaction': recent_transaction,
+                'transaction': recent_transaction[0],
                 'approvees': approvees
             }
         }

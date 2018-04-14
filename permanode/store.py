@@ -148,30 +148,31 @@ class Store:
             raise Exception('Could not update approvee.')
 
     def extract_dump(self):
-        for file in sorted(os.listdir(folder)):
-            if file.endswith('.dmp'):
-                count = 0
-                with open(folder + file, 'r') as f:
-                    for line in f:
-                        tx_hash, tx = line.split(',')
-                        tx = transaction.transaction(tx, tx_hash)
+        for directory in sorted(os.listdir(folder)):
+            for file in sorted(os.listdir(directory)):
+                if file.endswith('.dmp'):
+                    count = 0
+                    with open(folder + file, 'r') as f:
+                        for line in f:
+                            tx_hash, tx = line.split(',')
+                            tx = transaction.transaction(tx, tx_hash)
 
-                        hash = tx.hash
-                        branch = tx.branch_transaction_hash
-                        trunk = tx.trunk_transaction_hash
+                            hash = tx.hash
+                            branch = tx.branch_transaction_hash
+                            trunk = tx.trunk_transaction_hash
 
-                        date = datetime.datetime.fromtimestamp(
-                               tx.timestamp
+                            date = datetime.datetime.fromtimestamp(
+                                tx.timestamp
                             ).strftime('%Y-%m-%d-%H')
 
-                        self.store_to_transactions_table(tx, date)
-                        self.store_to_addresses_table(tx, date)
-                        self.store_to_bundles_table(tx, date)
-                        self.store_to_tags_table(tx, date)
-                        self.store_to_transaction_hashes_table(tx, date)
-                        self.store_to_approvee_table(hash, branch, date)
-                        self.store_to_approvee_table(hash, trunk, date)
+                            self.store_to_transactions_table(tx, date)
+                            self.store_to_addresses_table(tx, date)
+                            self.store_to_bundles_table(tx, date)
+                            self.store_to_tags_table(tx, date)
+                            self.store_to_transaction_hashes_table(tx, date)
+                            self.store_to_approvee_table(hash, branch, date)
+                            self.store_to_approvee_table(hash, trunk, date)
 
-                        count += 1
-                        print('Dumped so far', count, file=sys.stdout)
+                            count += 1
+                            print('Dumped so far', count, file=sys.stdout)
 

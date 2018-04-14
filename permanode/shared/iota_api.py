@@ -18,7 +18,7 @@ class IotaApi:
         }
 
         self.method = 'GET'
-        self.url = 'http://node.iota.bar:14265'
+        self.url = 'http://iotanode.party:14265'
 
         self.response_map = {
             'findTransactions': 'hashes',
