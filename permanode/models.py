@@ -21,8 +21,8 @@ class Transaction(Base):
     bucket = columns.Text(primary_key=True, partition_key=True, required=True)
     hash = columns.Text(primary_key=True, required=True)
     address = columns.Text(required=True)
-    value = columns.BigInt(required=True)
-    transaction_time = columns.Integer(required=True)
+    value = columns.Text(required=True)
+    transaction_time = columns.BigInt(required=True)
     signature_message_fragment = columns.Text()
     tag = columns.Text(required=True)
     tag_index = columns.BigInt(required=True)
@@ -33,6 +33,7 @@ class Transaction(Base):
     branch_transaction_hash = columns.Text(required=True)
     nonce = columns.Text(required=True)
     min_weight_magnitude = columns.Integer(required=True)
+    persistence=columns.Boolean(required=True)
 
     @classmethod
     def filter(cls, buckets=list(), hashes=list()):
@@ -100,7 +101,7 @@ class Transaction(Base):
             "branch_transaction_hash": self.branch_transaction_hash,
             "nonce": self.nonce,
             "min_weight_magnitude": self.min_weight_magnitude,
-            "persistence": True  # since all txs from db are confirmed
+            "persistence": self.persistence
         }
 
 

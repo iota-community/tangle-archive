@@ -16,7 +16,7 @@ class Store:
     def __init__(self):
         self.extract_dump()
 
-    def store_to_transactions_table(self, tx, date):
+    def store_to_transactions_table(self, tx, date, persistence=False):
         try:
             return Transaction.if_not_exists().create(
                 bucket=date,
@@ -33,7 +33,8 @@ class Store:
                 trunk_transaction_hash=tx.trunk_transaction_hash,
                 branch_transaction_hash=tx.branch_transaction_hash,
                 nonce=tx.nonce,
-                min_weight_magnitude=tx.min_weight_magnitude
+                min_weight_magnitude=tx.min_weight_magnitude,
+                persistence=persistence
             )
 
         except LWTException as e:
@@ -148,31 +149,31 @@ class Store:
             raise Exception('Could not update approvee.')
 
     def extract_dump(self):
-        for directory in sorted(os.listdir(folder)):
-            for file in sorted(os.listdir(directory)):
-                if file.endswith('.dmp'):
-                    count = 0
-                    with open(folder + file, 'r') as f:
-                        for line in f:
-                            tx_hash, tx = line.split(',')
-                            tx = transaction.transaction(tx, tx_hash)
+        for file in sorted(os.listdir(folder)):
+            if file.endswith('.dmp'):
+                count = 0
+                with open(folder + file, 'r') as f:
+                    for line in f:
+                        tx_hash, tx = line.split(',')
+                        tx = transaction.transaction(tx, tx_hash)
 
-                            hash = tx.hash
-                            branch = tx.branch_transaction_hash
-                            trunk = tx.trunk_transaction_hash
+                        hash = tx.hash
+                        branch = tx.branch_transaction_hash
+                        trunk = tx.trunk_transaction_hash
 
-                            date = datetime.datetime.fromtimestamp(
-                                tx.timestamp
-                            ).strftime('%Y-%m-%d-%H')
+                        date = datetime.datetime.fromtimestamp(
+                            tx.timestamp
+                        ).strftime('%Y-%m-%d-%H')
 
-                            self.store_to_transactions_table(tx, date)
-                            self.store_to_addresses_table(tx, date)
-                            self.store_to_bundles_table(tx, date)
-                            self.store_to_tags_table(tx, date)
-                            self.store_to_transaction_hashes_table(tx, date)
-                            self.store_to_approvee_table(hash, branch, date)
-                            self.store_to_approvee_table(hash, trunk, date)
+                        self.store_to_transactions_table(tx, date)
+                        self.store_to_addresses_table(tx, date)
+                        self.store_to_bundles_table(tx, date)
+                        self.store_to_tags_table(tx, date)
+                        self.store_to_transaction_hashes_table(tx, date)
+                        self.store_to_approvee_table(hash, branch, date)
+                        self.store_to_approvee_table(hash, trunk, date)
 
-                            count += 1
-                            print('Dumped so far', count, file=sys.stdout)
+                        count += 1
+                        print('Dumped so far', count, file=sys.stdout)
+
 
