@@ -22,7 +22,7 @@ class Transaction(Base):
     hash = columns.Text(primary_key=True, required=True)
     address = columns.Text(required=True)
     value = columns.Text(required=True)
-    transaction_time = columns.BigInt(required=True)
+    transaction_time = columns.Date(required=True)
     signature_message_fragment = columns.Text()
     tag = columns.Text(required=True)
     tag_index = columns.BigInt(required=True)

@@ -22,7 +22,7 @@ class Store:
                 bucket=date,
                 address=tx.address,
                 value=tx.value,
-                transaction_time=tx.timestamp,
+                transaction_time=tx.timestampDate,
                 hash=tx.hash,
                 signature_message_fragment=tx.signature_message_fragment,
                 tag=tx.tag,
