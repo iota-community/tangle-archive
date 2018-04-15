@@ -1,3 +1,4 @@
+import time
 from __future__ import print_function
 import sys
 
@@ -22,7 +23,7 @@ class Store:
                 bucket=date,
                 address=tx.address,
                 value=tx.value,
-                transaction_time=tx.timestampDate,
+                transaction_time=tx.timestamp,
                 hash=tx.hash,
                 signature_message_fragment=tx.signature_message_fragment,
                 tag=tx.tag,
@@ -162,7 +163,7 @@ class Store:
                         trunk = tx.trunk_transaction_hash
 
                         date = datetime.datetime.fromtimestamp(
-                            tx.timestamp
+                            tx.timestamp if tx.timestamp > 0 else time.time()
                         ).strftime('%Y-%m-%d-%H')
 
                         self.store_to_transactions_table(tx, date)
