@@ -162,9 +162,7 @@ class Store:
                         branch = tx.branch_transaction_hash
                         trunk = tx.trunk_transaction_hash
 
-                        date = datetime.datetime.fromtimestamp(
-                            tx.timestamp if tx.timestamp > 0 else time.time()
-                        ).strftime('%Y-%m-%d-%H')
+                        date = tx.timestampDate
 
                         self.store_to_transactions_table(tx, date)
                         self.store_to_addresses_table(tx, date)
