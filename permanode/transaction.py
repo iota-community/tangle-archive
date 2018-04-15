@@ -29,7 +29,7 @@ class transaction:
 
     def format(self):
         # convert tryte values to numbers:
-        self.value = transaction.trytes_to_number(self.value)
+        self.value = str(transaction.trytes_to_number(self.value))
         self.timestamp = transaction.trytes_to_number(self.timestamp)
         self.current_index = transaction.trytes_to_number(self.current_index)
         self.last_index = transaction.trytes_to_number(self.last_index)
