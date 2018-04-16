@@ -21,7 +21,7 @@ class Store:
             return Transaction.if_not_exists().create(
                 bucket=date,
                 address=tx.address,
-                value=tx.value,
+                value=str(tx.value),
                 transaction_time=tx.timestamp,
                 hash=tx.hash,
                 signature_message_fragment=tx.signature_message_fragment,
