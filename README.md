@@ -13,7 +13,7 @@
 Clone the repository from the command line by entering:
 
 ```
-git clone https://gitlab.com/iota-healthcare/permanode
+git clone https://github.com/iota-community/tangle-archive/
 ```
 
 Once you configure all of the required dependencies and clone the source code, you are ready to begin working with the API. Type the following command to start the API server on port `9080`.
