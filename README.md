@@ -1,4 +1,4 @@
-# Permanode
+# Tangle-Archive
 
 ## Required Dependencies
 
